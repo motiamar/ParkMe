@@ -1,7 +1,9 @@
+/* Global reset — ensures consistent box model across all browsers */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
+/* Base body styles — removes default margin and sets the font stack */
 body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;

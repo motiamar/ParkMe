@@ -1,3 +1,9 @@
+/*
+  Legacy styles from the Vite + React starter template.
+  Not used by any current ParkMe component — kept in case the template
+  demo page is referenced during setup, but safe to delete later.
+*/
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;
