@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "name": "City Center Parking",
+    "address": "123 Main Street, Tel Aviv",
+    "latitude": 32.0853,
+    "longitude": 34.7818,
+    "pricePerHour": 15.00,
+    "availableSpaces": 42,
+    "totalSpaces": 100,
+    "image": null
+  },
+  {
+    "id": 2,
+    "name": "Dizengoff Square Lot",
+    "address": "50 Dizengoff Square, Tel Aviv",
+    "latitude": 32.0810,
+    "longitude": 34.7741,
+    "pricePerHour": 12.50,
+    "availableSpaces": 18,
+    "totalSpaces": 60,
+    "image": null
+  },
+  {
+    "id": 3,
+    "name": "Carmel Market Parking",
+    "address": "7 HaCarmel Street, Tel Aviv",
+    "latitude": 32.0658,
+    "longitude": 34.7695,
+    "pricePerHour": 10.00,
+    "availableSpaces": 0,
+    "totalSpaces": 50,
+    "image": null
+  },
+  {
+    "id": 4,
+    "name": "Rabin Square Garage",
+    "address": "2 Ibn Gabirol Street, Tel Aviv",
+    "latitude": 32.0803,
+    "longitude": 34.7813,
+    "pricePerHour": 8.00,
+    "availableSpaces": 75,
+    "totalSpaces": 200,
+    "image": null
+  },
+  {
+    "id": 5,
+    "name": "Old Jaffa Lot",
+    "address": "10 Yefet Street, Jaffa",
+    "latitude": 32.0524,
+    "longitude": 34.7535,
+    "pricePerHour": 6.00,
+    "availableSpaces": 30,
+    "totalSpaces": 80,
+    "image": null
+  }
+]

@@ -1,41 +1,38 @@
+using ParkMeBackend.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
+builder.Services.AddScoped<ParkingLotService>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+        // Allow both 5173 (Vite default) and 5175 (fallback if 5173 is taken).
+        // Vite is configured to use 5173 with strictPort, but listing both prevents
+        // a silent CORS failure if the port ever changes during development.
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5175")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+// UseHttpsRedirection is disabled in development because the browser rejects
+// the self-signed dev certificate, causing fetch() to silently fail with
+// "Failed to fetch". Re-enable this when deploying to a real HTTPS server.
+if (!app.Environment.IsDevelopment())
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    app.UseHttpsRedirection();
+}
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.UseCors("AllowFrontend");
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
