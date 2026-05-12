@@ -26,6 +26,13 @@ function NearbyParkingPage({ location }) {
   const [isLoading, setIsLoading]     = useState(true);
   const [error, setError]             = useState(null);
 
+  // selectedSort drives which query parameter is sent to the backend.
+  // 'default'  → no sortBy param  → backend returns lots in file order
+  // 'distance' → ?sortBy=distance → backend sorts closest-first (Haversine)
+  // 'price'    → ?sortBy=price    → backend sorts cheapest-first
+  // To add more options later, add another value here and a button in the UI below.
+  const [selectedSort, setSelectedSort] = useState('default');
+
   // panelTop: how far from the top of the screen the panel starts (in vh units).
   // Lower value = panel higher up = more list visible, less map visible.
   const [panelTop, setPanelTop]       = useState(SNAP_PEEK);
@@ -38,13 +45,26 @@ function NearbyParkingPage({ location }) {
   // Using a ref avoids creating a new render on every pointermove.
   const dragRef = useRef({ active: false, startY: 0, startTop: SNAP_PEEK });
 
-  // ---- Fetch parking lots from the backend once on mount ----
+  // ---- Fetch parking lots from the backend whenever selectedSort changes ----
+  // The backend does the sorting — the frontend only builds the URL and passes
+  // the sort option as a query parameter. No .sort() is called here.
   useEffect(() => {
     async function fetchParkingLots() {
+      // Reset state at the start of each fetch so stale data isn't shown.
+      setIsLoading(true);
+      setError(null);
       try {
-        // GET /api/parkinglots → Controllers/ParkingLotsController.cs
-        // → ParkingLotService.GetAllAsync() → Data/parkingLots.json
-        const response = await fetch(API_URL);
+        // Build the request URL:
+        //   default  → GET /api/parkinglots
+        //   distance → GET /api/parkinglots?sortBy=distance
+        //   price    → GET /api/parkinglots?sortBy=price
+        // Adding a new sort option only requires adding a button below and a
+        // supported value in the backend controller.
+        const url = selectedSort === 'default'
+          ? API_URL
+          : `${API_URL}?sortBy=${selectedSort}`;
+
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`Server returned status ${response.status}`);
         const data = await response.json();
         setParkingLots(data);
@@ -55,7 +75,7 @@ function NearbyParkingPage({ location }) {
       }
     }
     fetchParkingLots();
-  }, []);
+  }, [selectedSort]); // Re-fetch every time the user picks a different sort option
 
   // ---- Drag handlers — attached only to the handle bar ----
   // setPointerCapture ensures we keep receiving pointermove/pointerup even
@@ -179,8 +199,26 @@ function NearbyParkingPage({ location }) {
 
         <h2 style={styles.panelTitle}>Nearby Parking</h2>
 
-        {/* TODO (future sprint): Add sort buttons here — Cheapest / Closest / Balanced.
-            The parkingLots array will need to be sorted before the .map() call below. */}
+        {/* Sort buttons — clicking a button sets selectedSort, which triggers a
+            re-fetch with the correct ?sortBy= query param. The backend does the
+            actual sorting; no frontend .sort() is used anywhere.
+            To add more options later (e.g. "Balanced"), add an entry to this array
+            and make sure the backend controller accepts the new sortBy value. */}
+        <div style={styles.sortRow}>
+          {[
+            { label: 'Default',  value: 'default'  },
+            { label: 'Closest',  value: 'distance' },
+            { label: 'Cheapest', value: 'price'    },
+          ].map(({ label, value }) => (
+            <button
+              key={value}
+              onClick={() => setSelectedSort(value)}
+              style={selectedSort === value ? styles.sortBtnActive : styles.sortBtn}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {/* ---- Loading state ---- */}
         {isLoading && (
@@ -317,6 +355,40 @@ const styles = {
     fontWeight: '700',
     color: '#111827',
     margin: '0 0 14px 0',
+  },
+
+  // Row that holds the three sort buttons
+  sortRow: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '14px',
+  },
+
+  // Inactive sort button — subtle gray pill
+  sortBtn: {
+    flex: 1,
+    padding: '8px 0',
+    border: '1px solid #e5e7eb',
+    borderRadius: '999px',
+    backgroundColor: '#f9fafb',
+    color: '#6b7280',
+    fontSize: '0.88rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
+
+  // Active sort button — white pill with blue border and text
+  sortBtnActive: {
+    flex: 1,
+    padding: '8px 0',
+    border: '1.5px solid #2563eb',
+    borderRadius: '999px',
+    backgroundColor: '#ffffff',
+    color: '#2563eb',
+    fontSize: '0.88rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 1px 4px rgba(37,99,235,0.10)',
   },
 
   statusText: {
