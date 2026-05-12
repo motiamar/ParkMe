@@ -17,11 +17,14 @@ const API_URL = 'http://localhost:5176/api/parkinglots';
 const SNAP_PEEK = 47;
 const SNAP_HALF = 15;
 
-// Estimates city driving time from distance in km.
-// Assumes ~15 km/h average urban speed — demo data only.
-// Real driving time will require Google Maps / Waze routing (future task).
+// Estimates city driving time from a straight-line distance in km.
+// distanceKm comes from the Haversine formula (GPS coordinates) — it is shorter
+// than the real road distance, so we use a modest 20 km/h to compensate.
+// 20 km/h gives realistic Tel Aviv city-driving estimates without a road factor:
+//   1 km → 3 min  |  5 km → 15 min  |  10 km → 30 min  |  15 km → 45 min
+// This is MVP demo data — real driving time needs a routing API (future task).
 function calcDrivingTime(distanceKm) {
-  const minutes = Math.max(1, Math.round(distanceKm / 15 * 60));
+  const minutes = Math.max(1, Math.ceil(distanceKm / 20 * 60));
   if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
