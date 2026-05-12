@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import ParkingLotDetails from './ParkingLotDetails';
 
 // Leaflet map library — free, open-source, no API key required.
 // Circle + CircleMarker are used instead of the default Marker to avoid a known
@@ -16,10 +17,26 @@ const API_URL = 'http://localhost:5176/api/parkinglots';
 const SNAP_PEEK = 47;
 const SNAP_HALF = 15;
 
+// Estimates city driving time from distance in km.
+// Assumes ~15 km/h average urban speed — demo data only.
+// Real driving time will require Google Maps / Waze routing (future task).
+function calcDrivingTime(distanceKm) {
+  const minutes = Math.max(1, Math.round(distanceKm / 15 * 60));
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h} hr ${m} min` : `${h} hr`;
+}
+
 // NearbyParkingPage
 // Layout: real Leaflet map (top) + draggable scrollable parking list panel (bottom).
 // Back button removed as of Task 70.
 function NearbyParkingPage({ location }) {
+
+  // selectedLot: the parking lot the user tapped on.
+  // When set, ParkingLotDetails is shown instead of the list.
+  // Cleared (back to null) when the user presses Back in the details view.
+  const [selectedLot, setSelectedLot] = useState(null);
 
   // Parking data from the backend
   const [parkingLots, setParkingLots] = useState([]);
@@ -54,15 +71,17 @@ function NearbyParkingPage({ location }) {
       setIsLoading(true);
       setError(null);
       try {
-        // Build the request URL:
-        //   default  → GET /api/parkinglots
-        //   distance → GET /api/parkinglots?sortBy=distance
-        //   price    → GET /api/parkinglots?sortBy=price
-        // Adding a new sort option only requires adding a button below and a
-        // supported value in the backend controller.
-        const url = selectedSort === 'default'
-          ? API_URL
-          : `${API_URL}?sortBy=${selectedSort}`;
+        // Build the request URL.
+        // userLat/userLng are always sent when available so the backend can
+        // attach lot.distance to every response — the frontend never recalculates it.
+        // sortBy is only added when the user has picked a non-default sort option.
+        const params = new URLSearchParams();
+        if (selectedSort !== 'default') params.set('sortBy', selectedSort);
+        if (location) {
+          params.set('userLat', location.lat);
+          params.set('userLng', location.lng);
+        }
+        const url = params.size > 0 ? `${API_URL}?${params}` : API_URL;
 
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Server returned status ${response.status}`);
@@ -75,7 +94,10 @@ function NearbyParkingPage({ location }) {
       }
     }
     fetchParkingLots();
-  }, [selectedSort]); // Re-fetch every time the user picks a different sort option
+  // Re-fetch when sort changes or when user coordinates first become available.
+  // Using primitive lat/lng values (not the location object) avoids re-renders
+  // caused by a new object reference with the same coordinates.
+  }, [selectedSort, location?.lat, location?.lng]);
 
   // ---- Drag handlers — attached only to the handle bar ----
   // setPointerCapture ensures we keep receiving pointermove/pointerup even
@@ -111,6 +133,13 @@ function NearbyParkingPage({ location }) {
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
+
+  // If a card was tapped, show the details view instead of the list.
+  // onBack clears selectedLot, which returns to the normal list.
+  if (selectedLot) {
+    return <ParkingLotDetails lot={selectedLot} onBack={() => setSelectedLot(null)} />;
+  }
+
   return (
     <div style={styles.screen}>
 
@@ -242,35 +271,62 @@ function NearbyParkingPage({ location }) {
         {/* ---- Success state: one card per parking lot ---- */}
         {!isLoading && !error && parkingLots.length > 0 && (
           <ul style={styles.list}>
-            {parkingLots.map((lot) => (
-              <li key={lot.id} style={styles.card}>
+            {parkingLots.map((lot) => {
+              // Distance comes from the backend (lot.distance), not computed here.
+              // The backend populates it via Haversine when userLat/userLng are sent.
+              // null means coordinates were not available for this request.
+              const distKm = lot.distance ?? null;
 
-                {/* Top row: bold name on left, coloured price on right */}
-                <div style={styles.cardTopRow}>
-                  <p style={styles.lotName}>{lot.name}</p>
-                  <p style={styles.lotPrice}>
-                    {lot.pricePerHour === 0 ? 'FREE' : `₪${lot.pricePerHour}/hr`}
-                  </p>
-                </div>
+              // Clicking a card stores the lot in selectedLot state,
+              // which swaps the list view for ParkingLotDetails.
+              return (
+                <li
+                  key={lot.id}
+                  style={{ ...styles.card, cursor: 'pointer' }}
+                  onClick={() => setSelectedLot(lot)}
+                >
 
-                {/* Address */}
-                <p style={styles.lotAddress}>{lot.address}</p>
+                  {/* Top row: bold name on left, coloured price on right */}
+                  <div style={styles.cardTopRow}>
+                    <p style={styles.lotName}>{lot.name}</p>
+                    <p style={styles.lotPrice}>
+                      {lot.pricePerHour === 0 ? 'FREE' : `₪${lot.pricePerHour}/hr`}
+                    </p>
+                  </div>
 
-                {/* Availability badge — green when spaces remain, red when full */}
-                <div style={styles.cardBottomRow}>
-                  <span style={{
-                    ...styles.badge,
-                    backgroundColor: lot.availableSpaces === 0 ? '#fef2f2' : '#f0fdf4',
-                    color:           lot.availableSpaces === 0 ? '#dc2626' : '#16a34a',
-                  }}>
-                    {lot.availableSpaces === 0
-                      ? 'Full'
-                      : `${lot.availableSpaces} / ${lot.totalSpaces} spaces`}
-                  </span>
-                </div>
+                  {/* Address */}
+                  <p style={styles.lotAddress}>{lot.address}</p>
 
-              </li>
-            ))}
+                  {/* Bottom row: availability badge (left) + distance (right) */}
+                  <div style={styles.cardBottomRow}>
+                    <span style={{
+                      ...styles.badge,
+                      backgroundColor: lot.availableSpaces === 0 ? '#fef2f2' : '#f0fdf4',
+                      color:           lot.availableSpaces === 0 ? '#dc2626' : '#16a34a',
+                    }}>
+                      {lot.availableSpaces === 0
+                        ? 'Full'
+                        : `${lot.availableSpaces} / ${lot.totalSpaces} spaces`}
+                    </span>
+
+                    {/* Distance from user — only shown when location is available */}
+                    {distKm !== null && (
+                      <span style={styles.distanceText}>
+                        ↗ {distKm.toFixed(1)} km
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Estimated arrival time — shown on its own row below the badge */}
+                  {distKm !== null && (
+                    <span style={styles.etaText}>
+                      ⏱ {calcDrivingTime(distKm)}
+                    </span>
+                  )}
+
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -472,8 +528,23 @@ const styles = {
   cardBottomRow: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between', // badge on left, distance on right
     gap: '8px',
     marginTop: '4px',
+  },
+
+  // "↗ 1.2 km" — straight-line distance from user to this lot
+  distanceText: {
+    fontSize: '0.82rem',
+    color: '#6b7280',
+    whiteSpace: 'nowrap',
+  },
+
+  // "⏱ 3 min" — estimated travel time based on distance at ~5 km/h
+  etaText: {
+    fontSize: '0.82rem',
+    color: '#6b7280',
+    marginTop: '2px',
   },
 
   badge: {

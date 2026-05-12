@@ -11,4 +11,5 @@ public class ParkingLot
     public int AvailableSpaces { get; set; }
     public int TotalSpaces { get; set; }
     public string? Image { get; set; }
+    public double? Distance { get; set; }
 }

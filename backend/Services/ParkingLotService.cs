@@ -50,10 +50,19 @@ public class ParkingLotService
     {
         var lots = await GetAllAsync();
 
+        // Attach distance to every lot when user coordinates are provided.
+        // This lets the frontend display distance and ETA without duplicating
+        // the Haversine formula on the client side.
+        if (userLat.HasValue && userLng.HasValue)
+        {
+            foreach (var lot in lots)
+                lot.Distance = ComputeDistanceKm(userLat.Value, userLng.Value, lot.Latitude, lot.Longitude);
+        }
+
         if (sortBy == "price")
         {
             // Sort ascending by price — cheapest parking lot first.
-            return lots.OrderBy(l => l.PricePerHour).ToList();
+            return [.. lots.OrderBy(l => l.PricePerHour)];
         }
 
         if (sortBy == "distance")
@@ -62,10 +71,8 @@ public class ParkingLotService
             if (!userLat.HasValue || !userLng.HasValue)
                 return lots;
 
-            // Sort ascending by computed great-circle distance from the user's position.
-            return lots
-                .OrderBy(l => ComputeDistanceKm(userLat.Value, userLng.Value, l.Latitude, l.Longitude))
-                .ToList();
+            // Reuse the Distance already computed above — no second Haversine pass needed.
+            return [.. lots.OrderBy(l => l.Distance)];
         }
 
         // sortBy is null → return default (file) order.
