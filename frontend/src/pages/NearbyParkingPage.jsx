@@ -2,10 +2,35 @@ import { useState, useEffect, useRef } from 'react';
 import ParkingLotDetails from './ParkingLotDetails';
 
 // Leaflet map library — free, open-source, no API key required.
-// Circle + CircleMarker are used instead of the default Marker to avoid a known
+// Circle + CircleMarker are used for the user location dot to avoid a known
 // Leaflet + Vite asset-path bug with the default marker icon images.
-import { MapContainer, TileLayer, CircleMarker, Circle } from 'react-leaflet';
+// Parking lot markers use Marker + divIcon (HTML-based) for the same reason —
+// divIcon renders inline HTML instead of loading image files from disk.
+import { MapContainer, TileLayer, CircleMarker, Circle, Marker, Tooltip } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Custom parking lot marker icon — a green circle with "P" and a downward pointer.
+// Using divIcon avoids the Leaflet + Vite default-icon asset-path bug entirely.
+// iconAnchor [13, 34] places the tip of the triangle at the lot's exact coordinates.
+//
+// Visual difference from user marker:
+//   User location  → blue filled CircleMarker (like Google Maps / Waze GPS dot)
+//   Parking lot    → green "P" pin (circle + triangle pointer, standard map-pin style)
+const parkingIcon = L.divIcon({
+  className: '',
+  html: `<div style="display:flex;flex-direction:column;align-items:center;">
+           <div style="width:26px;height:26px;background:#16a34a;border:3px solid #fff;
+                       border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.35);
+                       display:flex;align-items:center;justify-content:center;
+                       font-family:sans-serif;font-weight:800;font-size:13px;color:#fff;">P</div>
+           <div style="width:0;height:0;border-left:6px solid transparent;
+                       border-right:6px solid transparent;border-top:8px solid #16a34a;"></div>
+         </div>`,
+  iconSize:    [26, 34],
+  iconAnchor:  [13, 34],  // tip of the triangle sits exactly on the coordinate
+  popupAnchor: [0, -36],
+});
 
 // Backend API URL — reads parking lots from Data/parkingLots.json via ParkingLotService.
 // CORS in backend/Program.cs allows http://localhost:5173.
@@ -149,11 +174,14 @@ function NearbyParkingPage({ location }) {
       {/* ==============================================================
           MAP AREA
           Covers the top 60% of the screen.
-          Shows a real OpenStreetMap map centered on the user's location.
+          Shows a real CartoDB map centered on the user's location.
 
-          Only the user's GPS dot is shown right now.
-          TODO (future sprint): Add a <Marker> or <CircleMarker> for each
-          parking lot using lot.latitude / lot.longitude from the API data.
+          Displays:
+            • Blue dot  — user's current GPS position
+            • Green "P" pins — each nearby parking lot (lat/lng from API)
+
+          Lots without valid coordinates are skipped without crashing.
+          Clicking a pin opens the same ParkingLotDetails view as the list.
           ============================================================== */}
       <div style={styles.mapArea}>
         {userPosition ? (
@@ -182,7 +210,8 @@ function NearbyParkingPage({ location }) {
               }}
             />
 
-            {/* User location dot — solid blue with white border, like Google Maps / Waze */}
+            {/* User location dot — solid blue with white border, like Google Maps / Waze.
+                Visually distinct from parking lot markers (blue vs. green, dot vs. pin). */}
             <CircleMarker
               center={userPosition}
               radius={9}
@@ -193,6 +222,43 @@ function NearbyParkingPage({ location }) {
                 fillOpacity: 1,
               }}
             />
+
+            {/* ── Parking lot markers ──────────────────────────────────────────
+                One green "P" pin is rendered for each parking lot that has valid
+                latitude and longitude coordinates from the backend API.
+
+                Lots without coordinates are silently skipped — the filter below
+                ensures we never pass NaN/null to Leaflet, which would crash the map.
+                Only parking lots with coordinates can be shown on the map.
+
+                Clicking a pin sets selectedLot, which causes NearbyParkingPage to
+                render ParkingLotDetails — the same view opened by tapping a list card.
+
+                TODO (future task): replace setSelectedLot with a navigation trigger
+                once real routing (Google Maps / Waze) is connected. ──────────── */}
+            {parkingLots
+              .filter(lot =>
+                lot.latitude  != null && !isNaN(lot.latitude) &&
+                lot.longitude != null && !isNaN(lot.longitude)
+              )
+              .map(lot => (
+                <Marker
+                  key={lot.id}
+                  position={[lot.latitude, lot.longitude]}
+                  icon={parkingIcon}
+                  eventHandlers={{
+                    // Clicking a marker opens the same details card as clicking
+                    // a parking lot card in the list below.
+                    click: () => setSelectedLot(lot),
+                  }}
+                >
+                  {/* Tooltip shows the lot name on hover / tap for quick identification */}
+                  <Tooltip direction="top" offset={[0, -36]} opacity={0.95}>
+                    {lot.name}
+                  </Tooltip>
+                </Marker>
+              ))
+            }
           </MapContainer>
         ) : (
           // Fallback when no coordinates were passed (e.g. permission denied)
