@@ -135,16 +135,28 @@ function ParkingLotDetails({ lot, onBack }) {
             </div>
           )}
 
-          {/* TODO: Connect this button to Google Maps / Waze in a future task.
-              When ready, build the URL from lot.latitude + lot.longitude:
-              https://www.google.com/maps/dir/?api=1&destination=LAT,LNG
-              For now the button is UI-only and shows an informational alert. */}
-          <button
-            style={styles.navBtn}
-            onClick={() => alert('Navigation will be added in a future task.')}
-          >
-            Start Navigation
-          </button>
+          {/* Navigation buttons — open the lot's coordinates in Google Maps or Waze.
+              Using <a> instead of <button> so the browser/OS handles the deep link:
+              on mobile, tapping "Google Maps" opens the app if installed, otherwise
+              the website. Same for Waze. target="_blank" opens a new tab on desktop. */}
+          <div style={styles.navRow}>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${lot.latitude},${lot.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.googleBtn}
+            >
+              Google Maps
+            </a>
+            <a
+              href={`https://waze.com/ul?ll=${lot.latitude},${lot.longitude}&navigate=yes`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.wazeBtn}
+            >
+              Waze
+            </a>
+          </div>
 
         </div>
       </div>
@@ -324,22 +336,39 @@ const styles = {
     border: '1px solid #bfdbfe',
   },
 
-  // Full-width blue button — UI only for now.
-  // TODO: wire up to Google Maps / Waze in a future task.
-  navBtn: {
-    display: 'block',
-    width: '100%',
-    padding: '16px 0',
+  // Side-by-side row for the two navigation buttons
+  navRow: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 8,
+  },
+
+  // Google Maps button — blue
+  googleBtn: {
+    flex: 1,
+    padding: '15px 0',
     backgroundColor: '#2563eb',
     color: '#ffffff',
-    fontSize: '1rem',
+    fontSize: '0.95rem',
     fontWeight: '700',
     textAlign: 'center',
     borderRadius: 14,
-    border: 'none',
-    cursor: 'pointer',
-    boxSizing: 'border-box',
-    marginTop: 8,
+    textDecoration: 'none',
+    display: 'block',
+  },
+
+  // Waze button — Waze brand cyan
+  wazeBtn: {
+    flex: 1,
+    padding: '15px 0',
+    backgroundColor: '#00b4d8',
+    color: '#ffffff',
+    fontSize: '0.95rem',
+    fontWeight: '700',
+    textAlign: 'center',
+    borderRadius: 14,
+    textDecoration: 'none',
+    display: 'block',
   },
 };
 
