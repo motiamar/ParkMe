@@ -1,9 +1,18 @@
+using Microsoft.EntityFrameworkCore;
+using ParkMeBackend.Data;
 using ParkMeBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+
+// Register the Supabase PostgreSQL database.
+// The connection string comes from appsettings.Development.json (which is in .gitignore).
+// Replace YOUR_PASSWORD_HERE in that file with your real Supabase password before running.
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddScoped<ParkingLotService>();
 
 builder.Services.AddCors(options =>

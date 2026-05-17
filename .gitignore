@@ -50,3 +50,7 @@ Thumbs.db
 
 # Dependencies lock files (optional - uncomment to ignore)
 # package-lock.json
+
+# Local development settings that may contain secrets (DB passwords, API keys).
+# Each developer keeps their own copy locally — never commit these to GitHub.
+**/appsettings.Development.json

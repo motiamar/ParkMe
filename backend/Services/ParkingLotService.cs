@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using ParkMeBackend.Data;
 using ParkMeBackend.Models;
 
 namespace ParkMeBackend.Services;
@@ -6,18 +8,45 @@ namespace ParkMeBackend.Services;
 public class ParkingLotService
 {
     private readonly string _dataFilePath;
+    private readonly AppDbContext _db;
+
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         WriteIndented = true
     };
 
-    public ParkingLotService(IWebHostEnvironment env)
+    public ParkingLotService(IWebHostEnvironment env, AppDbContext db)
     {
         _dataFilePath = Path.Combine(env.ContentRootPath, "Data", "parkingLots.json");
+        _db = db;
     }
 
+    // Tries to load parking lots from Supabase.
+    // Falls back to the local JSON file if the database is unreachable or empty.
     public async Task<List<ParkingLot>> GetAllAsync()
+    {
+        try
+        {
+            var lots = await _db.ParkingLots.ToListAsync();
+
+            // If Supabase returned rows, use them.
+            if (lots.Count > 0)
+                return lots;
+        }
+        catch (Exception ex)
+        {
+            // Database is unreachable (e.g. wrong password, no internet).
+            // Log a warning and use the JSON file as a backup.
+            Console.WriteLine($"[ParkingLotService] Could not reach Supabase, using JSON fallback. Error: {ex.Message}");
+        }
+
+        // Fallback: load from the local JSON file.
+        return await GetAllFromFileAsync();
+    }
+
+    // Reads parking lots from the local JSON backup file.
+    private async Task<List<ParkingLot>> GetAllFromFileAsync()
     {
         if (!File.Exists(_dataFilePath))
             return [];
@@ -41,11 +70,6 @@ public class ParkingLotService
     // Price notes:
     //   PricePerHour is a decimal, so no text parsing is needed. Lots with PricePerHour == 0
     //   are treated as free and appear first (they are genuinely the cheapest).
-    //
-    // Missing/unclear values:
-    //   Since both PricePerHour (decimal) and Latitude/Longitude (double) are non-nullable
-    //   value types in this model, there are no null entries. The "missing values go to end"
-    //   rule applies mainly if this model is extended later with nullable fields.
     public async Task<List<ParkingLot>> GetSortedAsync(string? sortBy, double? userLat, double? userLng)
     {
         var lots = await GetAllAsync();
@@ -75,7 +99,7 @@ public class ParkingLotService
             return [.. lots.OrderBy(l => l.Distance)];
         }
 
-        // sortBy is null → return default (file) order.
+        // sortBy is null → return default order.
         return lots;
     }
 
