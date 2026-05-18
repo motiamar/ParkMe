@@ -54,13 +54,13 @@ function ParkingLotDetails({ lot, onBack }) {
 
         {/* ================================================================
             IMAGE AREA
-            Shows lot.image when it exists, otherwise a dark placeholder
+            Shows lot.imageUrl when it exists, otherwise a dark placeholder
             that resembles a parking garage photo.
             The back button is layered on top with absolute positioning.
             ================================================================ */}
         <div style={styles.imageArea}>
-          {lot.image ? (
-            <img src={lot.image} alt={lot.name} style={styles.image} />
+          {lot.imageUrl ? (
+            <img src={lot.imageUrl} alt={lot.name} style={styles.image} />
           ) : (
             <div style={styles.imagePlaceholder} />
           )}
@@ -199,7 +199,7 @@ const styles = {
     objectFit: 'cover',
   },
 
-  // Dark gradient placeholder shown when lot.image is null
+  // Dark gradient placeholder shown when lot.imageUrl is null
   imagePlaceholder: {
     width: '100%',
     height: '100%',

@@ -38,9 +38,7 @@ public class AppDbContext : DbContext
             // It does not exist as a column in the database — EF Core should ignore it.
             entity.Ignore(e => e.Distance);
 
-            // The database does not have an image column yet.
-            // EF Core must ignore this property so it doesn't throw an error.
-            entity.Ignore(e => e.Image);
+            entity.Property(e => e.ImageUrl).HasColumnName("image_url");
         });
     }
 }

@@ -10,6 +10,6 @@ public class ParkingLot
     public decimal PricePerHour { get; set; }
     public int AvailableSpaces { get; set; }
     public int TotalSpaces { get; set; }
-    public string? Image { get; set; }
+    public string? ImageUrl { get; set; }
     public double? Distance { get; set; }
 }
