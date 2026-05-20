@@ -65,7 +65,7 @@ function getLotAddress(lot, language) {
 // NearbyParkingPage
 // Layout: real Leaflet map (top) + draggable scrollable parking list panel (bottom).
 // Back button removed as of Task 70.
-function NearbyParkingPage({ location, language, t }) {
+function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
 
   // selectedLot: the parking lot the user tapped on.
   // When set, ParkingLotDetails is shown instead of the list.
@@ -353,7 +353,16 @@ function NearbyParkingPage({ location, language, t }) {
 
         <div style={styles.panelHeaderRow}>
           <h2 style={{ ...styles.panelTitle, textAlign: language === 'he' ? 'right' : 'left' }}>{t.nearby.title}</h2>
-          <TextSizeSelector labels={t.textSize} />
+          <div style={styles.headerControls}>
+            <TextSizeSelector labels={t.textSize} />
+            <button
+              type="button"
+              onClick={onToggleLanguage}
+              style={styles.languageToggle}
+            >
+              {t.toggleLanguage}
+            </button>
+          </div>
         </div>
 
         {/* Sort buttons — clicking a button sets selectedSort, which triggers a
@@ -540,6 +549,8 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
     marginBottom: '14px',
   },
 
@@ -548,6 +559,29 @@ const styles = {
     fontWeight: '700',
     color: '#111827',
     margin: 0,
+  },
+
+  headerControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+    marginInlineStart: 'auto',
+  },
+
+  languageToggle: {
+    minHeight: '36px',
+    padding: '0 14px',
+    borderRadius: '999px',
+    border: '1px solid rgba(37,99,235,0.18)',
+    backgroundColor: '#ffffff',
+    color: '#2563eb',
+    fontSize: '0.88rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 1px 4px rgba(15,23,42,0.08)',
+    lineHeight: 1,
+    whiteSpace: 'nowrap',
   },
 
   // Row that holds the three sort buttons

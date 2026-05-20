@@ -143,23 +143,13 @@ function App() {
   // Render the active page, passing down only the props each page needs
   return (
     <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.shell}>
-      <button
-        type="button"
-        onClick={toggleLanguage}
-        style={{
-          ...styles.languageToggle,
-          ...(language === 'he' ? styles.languageToggleHebrew : styles.languageToggleEnglish),
-        }}
-      >
-        {t.toggleLanguage}
-      </button>
-
       {page === 'nearby' ? (
         <NearbyParkingPage
           onNavigate={setPage}
           location={location}
           language={language}
           t={t}
+          onToggleLanguage={toggleLanguage}
         />
       ) : (
         <LandingPage
@@ -176,27 +166,6 @@ function App() {
 const styles = {
   shell: {
     minHeight: '100vh',
-  },
-  languageToggle: {
-    position: 'fixed',
-    top: '16px',
-    zIndex: 2000,
-    padding: '8px 14px',
-    borderRadius: '999px',
-    border: '1px solid rgba(37,99,235,0.18)',
-    backgroundColor: '#ffffff',
-    color: '#2563eb',
-    fontWeight: '700',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(15,23,42,0.12)',
-  },
-  languageToggleHebrew: {
-    left: '16px',
-    right: 'auto',
-  },
-  languageToggleEnglish: {
-    right: '16px',
-    left: 'auto',
   },
 };
 
