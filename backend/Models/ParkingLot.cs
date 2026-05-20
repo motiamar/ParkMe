@@ -12,4 +12,6 @@ public class ParkingLot
     public int TotalSpaces { get; set; }
     public string? ImageUrl { get; set; }
     public double? Distance { get; set; }
+    public double? DrivingDistanceKm { get; set; }
+    public int? DrivingTimeMinutes { get; set; }
 }

@@ -1,16 +1,8 @@
-// Estimates city driving time from a straight-line distance in km.
-// distanceKm comes from the Haversine formula (GPS coordinates) — it is shorter
-// than the real road distance, so we use a modest 20 km/h to compensate.
-// 20 km/h gives realistic Tel Aviv city-driving estimates without a road factor:
-//   1 km → 3 min  |  5 km → 15 min  |  10 km → 30 min  |  15 km → 45 min
-// This is MVP demo data — real driving time needs a routing API (future task).
-// Same formula is used in NearbyParkingPage for the card list.
-function calcDrivingTime(distanceKm) {
-  const minutes = Math.max(1, Math.ceil((distanceKm / 20) * 60));
+function formatDrivingTime(minutes) {
   if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h} hr ${m} min` : `${h} hr`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes > 0 ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`;
 }
 
 // ParkingLotDetails
@@ -25,11 +17,8 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite }
   const isFree    = lot.pricePerHour === 0;
   const priceText = isFree ? 'FREE' : `₪${lot.pricePerHour}`;
 
-  // Distance and driving time come from lot.distance (set by the backend when
-  // userLat/userLng are sent). Show "Not available" if coordinates were not provided.
-  // drivingTimeMinutes is a demo estimate — real routing requires a future integration.
-  const distText        = lot.distance != null ? `${lot.distance.toFixed(1)} km` : 'Not available';
-  const drivingTimeText = lot.distance != null ? calcDrivingTime(lot.distance)   : 'Not available';
+  const distText = lot.drivingDistanceKm != null ? `${lot.drivingDistanceKm.toFixed(1)} km` : 'Distance unavailable';
+  const drivingTimeText = lot.drivingTimeMinutes != null ? formatDrivingTime(lot.drivingTimeMinutes) : 'Travel time unavailable';
 
   // Availability label + colour based on occupancy ratio
   let availText  = 'Not available';

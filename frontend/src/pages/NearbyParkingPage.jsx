@@ -45,18 +45,11 @@ const API_URL = 'http://localhost:5176/api/parkinglots';
 const SNAP_PEEK = 47;
 const SNAP_HALF = 15;
 
-// Estimates city driving time from a straight-line distance in km.
-// distanceKm comes from the Haversine formula (GPS coordinates) — it is shorter
-// than the real road distance, so we use a modest 20 km/h to compensate.
-// 20 km/h gives realistic Tel Aviv city-driving estimates without a road factor:
-//   1 km → 3 min  |  5 km → 15 min  |  10 km → 30 min  |  15 km → 45 min
-// This is MVP demo data — real driving time needs a routing API (future task).
-function calcDrivingTime(distanceKm) {
-  const minutes = Math.max(1, Math.ceil(distanceKm / 20 * 60));
+function formatDrivingTime(minutes) {
   if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h} hr ${m} min` : `${h} hr`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes > 0 ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`;
 }
 
 // NearbyParkingPage
@@ -395,10 +388,8 @@ function NearbyParkingPage({ location }) {
         {!isLoading && !error && parkingLots.length > 0 && (
           <ul style={styles.list}>
             {parkingLots.map((lot) => {
-              // Distance comes from the backend (lot.distance), not computed here.
-              // The backend populates it via Haversine when userLat/userLng are sent.
-              // null means coordinates were not available for this request.
-              const distKm = lot.distance ?? null;
+              const distKm = lot.drivingDistanceKm ?? null;
+              const travelMinutes = lot.drivingTimeMinutes ?? null;
 
               // Clicking a card stores the lot in selectedLot state,
               // which swaps the list view for ParkingLotDetails.
@@ -441,20 +432,14 @@ function NearbyParkingPage({ location }) {
                         : `${lot.availableSpaces} / ${lot.totalSpaces} spaces`}
                     </span>
 
-                    {/* Distance from user — only shown when location is available */}
-                    {distKm !== null && (
-                      <span style={styles.distanceText}>
-                        ↗ {distKm.toFixed(1)} km
-                      </span>
-                    )}
+                    <span style={styles.distanceText}>
+                      {distKm !== null ? `↗ ${distKm.toFixed(1)} km` : 'Distance unavailable'}
+                    </span>
                   </div>
 
-                  {/* Estimated arrival time — shown on its own row below the badge */}
-                  {distKm !== null && (
-                    <span style={styles.etaText}>
-                      ⏱ {calcDrivingTime(distKm)}
-                    </span>
-                  )}
+                  <span style={styles.etaText}>
+                    {travelMinutes !== null ? `⏱ ${formatDrivingTime(travelMinutes)}` : 'Travel time unavailable'}
+                  </span>
 
                 </li>
               );

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using ParkMeBackend.Data;
 using ParkMeBackend.Models;
@@ -7,6 +8,11 @@ namespace ParkMeBackend.Services;
 
 public class ParkingLotService
 {
+    private static readonly HttpClient _httpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(8)
+    };
+
     private readonly string _dataFilePath;
     private readonly AppDbContext _db;
 
@@ -74,13 +80,11 @@ public class ParkingLotService
     {
         var lots = await GetAllAsync();
 
-        // Attach distance to every lot when user coordinates are provided.
-        // This lets the frontend display distance and ETA without duplicating
-        // the Haversine formula on the client side.
+        // Attach driving distance/time to every lot when user coordinates are provided.
+        // The frontend can then display realistic values without reimplementing routing.
         if (userLat.HasValue && userLng.HasValue)
         {
-            foreach (var lot in lots)
-                lot.Distance = ComputeDistanceKm(userLat.Value, userLng.Value, lot.Latitude, lot.Longitude);
+            await EnrichWithDrivingMetricsAsync(lots, userLat.Value, userLng.Value);
         }
 
         if (sortBy == "price")
@@ -95,28 +99,68 @@ public class ParkingLotService
             if (!userLat.HasValue || !userLng.HasValue)
                 return lots;
 
-            // Reuse the Distance already computed above — no second Haversine pass needed.
-            return [.. lots.OrderBy(l => l.Distance)];
+            // Reuse the routing distance already computed above.
+            return [.. lots.OrderBy(l => l.Distance ?? double.MaxValue)];
         }
 
         // sortBy is null → return default order.
         return lots;
     }
 
-    // Haversine formula: returns the great-circle distance in kilometres between two
-    // GPS coordinates. Accurate enough for city-scale distances.
-    private static double ComputeDistanceKm(double lat1, double lng1, double lat2, double lng2)
+    private static async Task EnrichWithDrivingMetricsAsync(List<ParkingLot> lots, double userLat, double userLng)
     {
-        const double R = 6371; // Earth's mean radius in km
-        var dLat = ToRad(lat2 - lat1);
-        var dLng = ToRad(lng2 - lng1);
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
-              + Math.Cos(ToRad(lat1)) * Math.Cos(ToRad(lat2))
-              * Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
-        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        var tasks = lots.Select(async lot =>
+        {
+            var metrics = await GetDrivingMetricsAsync(userLat, userLng, lot.Latitude, lot.Longitude);
+            lot.DrivingDistanceKm = metrics.DistanceKm;
+            lot.DrivingTimeMinutes = metrics.TimeMinutes;
+            lot.Distance = metrics.DistanceKm;
+        });
+
+        await Task.WhenAll(tasks);
     }
 
-    private static double ToRad(double degrees) => degrees * Math.PI / 180;
+    private static async Task<(double? DistanceKm, int? TimeMinutes)> GetDrivingMetricsAsync(
+        double userLat,
+        double userLng,
+        double lotLat,
+        double lotLng)
+    {
+        var url = string.Format(
+            CultureInfo.InvariantCulture,
+            "https://router.project-osrm.org/route/v1/driving/{0},{1};{2},{3}?overview=false",
+            userLng,
+            userLat,
+            lotLng,
+            lotLat);
+
+        try
+        {
+            using var response = await _httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+                return (null, null);
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var document = await JsonDocument.ParseAsync(stream);
+
+            if (!document.RootElement.TryGetProperty("routes", out var routes) || routes.GetArrayLength() == 0)
+                return (null, null);
+
+            var route = routes[0];
+            if (!route.TryGetProperty("distance", out var distanceElement) ||
+                !route.TryGetProperty("duration", out var durationElement))
+                return (null, null);
+
+            var distanceKm = distanceElement.GetDouble() / 1000d;
+            var timeMinutes = (int)Math.Ceiling(durationElement.GetDouble() / 60d);
+            return (distanceKm, timeMinutes);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ParkingLotService] OSRM routing failed for lot at ({lotLat}, {lotLng}). Error: {ex.Message}");
+            return (null, null);
+        }
+    }
 
     public async Task SaveAllAsync(List<ParkingLot> parkingLots)
     {
