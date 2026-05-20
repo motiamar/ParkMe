@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import ParkingLotDetails from './ParkingLotDetails';
+import TextSizeSelector from './TextSizeSelector';
 import { getOrCreateUserId } from '../utils/userId';
 import { fetchFavoriteIds, addFavorite, removeFavorite } from '../utils/favoritesApi';
 
@@ -345,7 +346,10 @@ function NearbyParkingPage({ location }) {
           onPointerCancel={handlePointerUp}
         />
 
-        <h2 style={styles.panelTitle}>Nearby Parking</h2>
+        <div style={styles.panelHeaderRow}>
+          <h2 style={styles.panelTitle}>Nearby Parking</h2>
+          <TextSizeSelector />
+        </div>
 
         {/* Sort buttons — clicking a button sets selectedSort, which triggers a
             re-fetch with the correct ?sortBy= query param. The backend does the
@@ -534,11 +538,19 @@ const styles = {
     userSelect: 'none',
   },
 
+  // Row that holds the panel title (left) and the text-size selector (right)
+  panelHeaderRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '14px',
+  },
+
   panelTitle: {
     fontSize: '1.15rem',
     fontWeight: '700',
     color: '#111827',
-    margin: '0 0 14px 0',
+    margin: 0,
   },
 
   // Row that holds the three sort buttons
