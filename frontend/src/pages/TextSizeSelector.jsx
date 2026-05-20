@@ -2,7 +2,7 @@ import { useTextSize } from '../utils/TextSizeContext';
 
 // Compact text-size selector — three "A" buttons of increasing size.
 // The active button is highlighted with a blue ring. Fits neatly in a toolbar row.
-function TextSizeSelector() {
+function TextSizeSelector({ labels }) {
   const { size, setSize, sizes } = useTextSize();
 
   const sizeKeys = Object.keys(sizes);
@@ -20,7 +20,7 @@ function TextSizeSelector() {
             <button
               key={key}
               onClick={() => setSize(key)}
-              aria-label={`Text size: ${key}`}
+              aria-label={labels?.[key] ?? `Text size: ${key}`}
               style={{
                 ...selectorStyles.btn,
                 ...(isActive ? selectorStyles.btnActive : {}),

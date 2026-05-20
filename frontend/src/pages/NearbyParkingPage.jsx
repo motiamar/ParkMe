@@ -45,17 +45,27 @@ const API_URL = 'http://localhost:5176/api/parkinglots';
 const SNAP_PEEK = 47;
 const SNAP_HALF = 15;
 
-function formatDrivingTime(minutes) {
-  if (minutes < 60) return `${minutes} min`;
+function formatDrivingTimeLocalized(minutes, labels) {
+  if (minutes < 60) return `${minutes} ${labels.minShort}`;
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0 ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`;
+  return remainingMinutes > 0
+    ? `${hours} ${labels.hrShort} ${remainingMinutes} ${labels.minShort}`
+    : `${hours} ${labels.hrShort}`;
+}
+
+function getLotName(lot, language) {
+  return language === 'he' ? lot.nameHe : lot.nameEn;
+}
+
+function getLotAddress(lot, language) {
+  return language === 'he' ? lot.addressHe : lot.addressEn;
 }
 
 // NearbyParkingPage
 // Layout: real Leaflet map (top) + draggable scrollable parking list panel (bottom).
 // Back button removed as of Task 70.
-function NearbyParkingPage({ location }) {
+function NearbyParkingPage({ location, language, t }) {
 
   // selectedLot: the parking lot the user tapped on.
   // When set, ParkingLotDetails is shown instead of the list.
@@ -208,12 +218,14 @@ function NearbyParkingPage({ location }) {
         onBack={() => setSelectedLot(null)}
         isFavorite={favoriteIds.has(selectedLot.id)}
         onToggleFavorite={toggleFavorite}
+        language={language}
+        t={t}
       />
     );
   }
 
   return (
-    <div style={styles.screen}>
+    <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
 
       {/* ==============================================================
           MAP AREA
@@ -298,7 +310,7 @@ function NearbyParkingPage({ location }) {
                 >
                   {/* Tooltip shows the lot name on hover / tap for quick identification */}
                   <Tooltip direction="top" offset={[0, -36]} opacity={0.95}>
-                    {lot.name}
+                    {getLotName(lot, language)}
                   </Tooltip>
                 </Marker>
               ))
@@ -307,7 +319,7 @@ function NearbyParkingPage({ location }) {
         ) : (
           // Fallback when no coordinates were passed (e.g. permission denied)
           <div style={styles.noMapFallback}>
-            <p style={styles.noLocationText}>Location unavailable — cannot show map</p>
+            <p style={{ ...styles.noLocationText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.mapUnavailable}</p>
           </div>
         )}
       </div>
@@ -340,8 +352,8 @@ function NearbyParkingPage({ location }) {
         />
 
         <div style={styles.panelHeaderRow}>
-          <h2 style={styles.panelTitle}>Nearby Parking</h2>
-          <TextSizeSelector />
+          <h2 style={{ ...styles.panelTitle, textAlign: language === 'he' ? 'right' : 'left' }}>{t.nearby.title}</h2>
+          <TextSizeSelector labels={t.textSize} />
         </div>
 
         {/* Sort buttons — clicking a button sets selectedSort, which triggers a
@@ -351,9 +363,9 @@ function NearbyParkingPage({ location }) {
             and make sure the backend controller accepts the new sortBy value. */}
         <div style={styles.sortRow}>
           {[
-            { label: 'Default',  value: 'default'  },
-            { label: 'Closest',  value: 'distance' },
-            { label: 'Cheapest', value: 'price'    },
+            { label: t.nearby.default,  value: 'default'  },
+            { label: t.nearby.closest,  value: 'distance' },
+            { label: t.nearby.cheapest, value: 'price'    },
           ].map(({ label, value }) => (
             <button
               key={value}
@@ -367,21 +379,21 @@ function NearbyParkingPage({ location }) {
 
         {/* ---- Loading state ---- */}
         {isLoading && (
-          <p style={styles.statusText}>Loading parking lots...</p>
+          <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.loading}</p>
         )}
 
         {/* ---- Error state ---- */}
         {!isLoading && error && (
           <div style={styles.errorBox}>
-            <p style={styles.errorText}>Could not load parking lots.</p>
+            <p style={{ ...styles.errorText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.loadError}</p>
             <p style={styles.errorDetail}>{error}</p>
-            <p style={styles.errorDetail}>Make sure the backend is running on port 5176.</p>
+            <p style={styles.errorDetail}>{t.nearby.backendHint}</p>
           </div>
         )}
 
         {/* ---- Empty state ---- */}
         {!isLoading && !error && parkingLots.length === 0 && (
-          <p style={styles.statusText}>No parking lots found.</p>
+          <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.empty}</p>
         )}
 
         {/* ---- Success state: one card per parking lot ---- */}
@@ -402,15 +414,15 @@ function NearbyParkingPage({ location }) {
 
                   {/* Top row: bold name on left, price + star on right */}
                   <div style={styles.cardTopRow}>
-                    <p style={styles.lotName}>{lot.name}</p>
+                    <p style={{ ...styles.lotName, textAlign: language === 'he' ? 'right' : 'left' }}>{getLotName(lot, language)}</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <p style={styles.lotPrice}>
-                        {lot.pricePerHour === 0 ? 'FREE' : `₪${lot.pricePerHour}/hr`}
+                        {lot.pricePerHour === 0 ? t.nearby.free : `₪${lot.pricePerHour}${t.nearby.hrSuffix}`}
                       </p>
                       <button
                         style={styles.starBtn}
                         onClick={(e) => { e.stopPropagation(); toggleFavorite(lot.id); }}
-                        aria-label={favoriteIds.has(lot.id) ? 'Remove from favorites' : 'Add to favorites'}
+                        aria-label={favoriteIds.has(lot.id) ? t.details.removeFavorite : t.details.addFavorite}
                       >
                         {favoriteIds.has(lot.id) ? '★' : '☆'}
                       </button>
@@ -418,7 +430,7 @@ function NearbyParkingPage({ location }) {
                   </div>
 
                   {/* Address */}
-                  <p style={styles.lotAddress}>{lot.address}</p>
+                  <p style={{ ...styles.lotAddress, textAlign: language === 'he' ? 'right' : 'left' }}>{getLotAddress(lot, language)}</p>
 
                   {/* Bottom row: availability badge (left) + distance (right) */}
                   <div style={styles.cardBottomRow}>
@@ -428,17 +440,17 @@ function NearbyParkingPage({ location }) {
                       color:           lot.availableSpaces === 0 ? '#dc2626' : '#16a34a',
                     }}>
                       {lot.availableSpaces === 0
-                        ? 'Full'
-                        : `${lot.availableSpaces} / ${lot.totalSpaces} spaces`}
+                        ? t.nearby.full
+                        : `${lot.availableSpaces} / ${lot.totalSpaces} ${t.nearby.spaces}`}
                     </span>
 
                     <span style={styles.distanceText}>
-                      {distKm !== null ? `↗ ${distKm.toFixed(1)} km` : 'Distance unavailable'}
+                      {distKm !== null ? `↗ ${distKm.toFixed(1)} km` : t.nearby.distanceUnavailable}
                     </span>
                   </div>
 
                   <span style={styles.etaText}>
-                    {travelMinutes !== null ? `⏱ ${formatDrivingTime(travelMinutes)}` : 'Travel time unavailable'}
+                    {travelMinutes !== null ? `⏱ ${formatDrivingTimeLocalized(travelMinutes, t.nearby)}` : t.nearby.travelTimeUnavailable}
                   </span>
 
                 </li>

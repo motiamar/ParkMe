@@ -5,39 +5,50 @@ function formatDrivingTime(minutes) {
   return remainingMinutes > 0 ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`;
 }
 
+function formatDrivingTimeLocalized(minutes, labels) {
+  if (minutes < 60) return `${minutes} ${labels.minShort}`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes > 0
+    ? `${hours} ${labels.hrShort} ${remainingMinutes} ${labels.minShort}`
+    : `${hours} ${labels.hrShort}`;
+}
+
 // ParkingLotDetails
 // Full-screen detail view for a single parking lot.
 //
 // Props:
 //   lot    – the parking lot object as returned by the backend API
 //   onBack – callback to return to the list (clears selectedLot in NearbyParkingPage)
-function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite }) {
+function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite, language, t }) {
+  const selectedName = language === 'he' ? lot.nameHe : lot.nameEn;
+  const selectedAddress = language === 'he' ? lot.addressHe : lot.addressEn;
 
   // Price display
   const isFree    = lot.pricePerHour === 0;
-  const priceText = isFree ? 'FREE' : `₪${lot.pricePerHour}`;
+  const priceText = isFree ? t.details.free : `₪${lot.pricePerHour}`;
 
-  const distText = lot.drivingDistanceKm != null ? `${lot.drivingDistanceKm.toFixed(1)} km` : 'Distance unavailable';
-  const drivingTimeText = lot.drivingTimeMinutes != null ? formatDrivingTime(lot.drivingTimeMinutes) : 'Travel time unavailable';
+  const distText = lot.drivingDistanceKm != null ? `${lot.drivingDistanceKm.toFixed(1)} km` : t.details.distanceUnavailable;
+  const drivingTimeText = lot.drivingTimeMinutes != null ? formatDrivingTimeLocalized(lot.drivingTimeMinutes, t.nearby) : t.details.travelTimeUnavailable;
 
   // Availability label + colour based on occupancy ratio
-  let availText  = 'Not available';
+  let availText  = t.details.notAvailable;
   let availColor = '#374151';
   if (lot.availableSpaces != null) {
     if (lot.availableSpaces === 0) {
-      availText  = 'Full';
+      availText  = t.details.full;
       availColor = '#dc2626';
     } else if (lot.totalSpaces && lot.availableSpaces / lot.totalSpaces < 0.25) {
-      availText  = 'Low';
+      availText  = t.details.low;
       availColor = '#d97706';
     } else {
-      availText  = 'Available';
+      availText  = t.details.available;
       availColor = '#16a34a';
     }
   }
 
   return (
-    <div style={styles.screen}>
+    <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
       {/* Max-width wrapper keeps the layout phone-sized on wide screens */}
       <div style={styles.wrapper}>
 
@@ -49,14 +60,14 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite }
             ================================================================ */}
         <div style={styles.imageArea}>
           {lot.imageUrl ? (
-            <img src={lot.imageUrl} alt={lot.name} style={styles.image} />
+            <img src={lot.imageUrl} alt={selectedName} style={styles.image} />
           ) : (
             <div style={styles.imagePlaceholder} />
           )}
 
           {/* Back button — calls onBack which sets selectedLot to null in
               NearbyParkingPage, returning the user to the parking list */}
-          <button onClick={onBack} style={styles.backBtn} aria-label="Back">
+          <button onClick={onBack} style={styles.backBtn} aria-label={t.details.back}>
             ‹
           </button>
 
@@ -65,7 +76,7 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite }
             <button
               onClick={() => onToggleFavorite(lot.id)}
               style={styles.starBtn}
-              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={isFavorite ? t.details.removeFavorite : t.details.addFavorite}
             >
               {isFavorite ? '★' : '☆'}
             </button>
@@ -80,40 +91,40 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite }
 
           {/* Name (left) + price block (right) */}
           <div style={styles.header}>
-            <h1 style={styles.name}>{lot.name}</h1>
+            <h1 style={{ ...styles.name, textAlign: language === 'he' ? 'right' : 'left' }}>{selectedName}</h1>
             <div style={styles.priceBlock}>
               <span style={{ ...styles.price, color: isFree ? '#16a34a' : '#2563eb' }}>
                 {priceText}
               </span>
-              {!isFree && <span style={styles.perHour}>per hour</span>}
+              {!isFree && <span style={styles.perHour}>{t.details.perHour}</span>}
             </div>
           </div>
 
           {/* Address */}
-          <p style={styles.address}>⊙ {lot.address}</p>
+          <p style={{ ...styles.address, textAlign: language === 'he' ? 'right' : 'left' }}>⊙ {selectedAddress}</p>
 
           {/* 2×2 information grid */}
           <div style={styles.infoGrid}>
 
             <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>AVAILABILITY</span>
+              <span style={styles.infoLabel}>{t.details.availability}</span>
               <span style={{ ...styles.infoValue, color: availColor }}>{availText}</span>
             </div>
 
             <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>TYPE</span>
+              <span style={styles.infoLabel}>{t.details.type}</span>
               {/* 'type' is not yet a field in the backend model — show fallback.
                   When it is added, lot.type will appear automatically. */}
-              <span style={styles.infoValue}>{lot.type ?? 'Not available'}</span>
+              <span style={styles.infoValue}>{lot.type ?? t.details.notAvailable}</span>
             </div>
 
             <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>DISTANCE</span>
+              <span style={styles.infoLabel}>{t.details.distance}</span>
               <span style={styles.infoValue}>{distText}</span>
             </div>
 
             <div style={styles.infoBox}>
-              <span style={styles.infoLabel}>DRIVING TIME</span>
+              <span style={styles.infoLabel}>{t.details.drivingTime}</span>
               {/* Demo estimate based on ~15 km/h city speed.
                   Real driving time needs a routing API — see TODO on Start Navigation. */}
               <span style={styles.infoValue}>{drivingTimeText}</span>
@@ -126,7 +137,7 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite }
               for when it is added. */}
           {lot.features && lot.features.length > 0 && (
             <div style={styles.featuresSection}>
-              <h3 style={styles.featuresTitle}>Features</h3>
+              <h3 style={{ ...styles.featuresTitle, textAlign: language === 'he' ? 'right' : 'left' }}>{t.details.features}</h3>
               <div style={styles.featuresList}>
                 {lot.features.map((f, i) => (
                   <span key={i} style={styles.featureTag}>✓ {f}</span>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 // Welcome screen shown on app launch — handles location permission flow
-function LandingPage({ onNavigate, onFindParking }) {
+function LandingPage({ onNavigate, onFindParking, language, t }) {
   // errorMessage: shown below the button if location is denied or unavailable
   // isLoading: disables the button while the browser is waiting for a location response
   const [errorMessage, setErrorMessage] = useState(null);
@@ -13,7 +13,7 @@ function LandingPage({ onNavigate, onFindParking }) {
 
     // Guard: some older browsers don't support geolocation at all
     if (!navigator.geolocation) {
-      setErrorMessage('Geolocation is not supported by your browser.');
+      setErrorMessage(t.landing.unsupported);
       return;
     }
 
@@ -32,9 +32,9 @@ function LandingPage({ onNavigate, onFindParking }) {
       (error) => {
         setIsLoading(false);
         if (error.code === error.PERMISSION_DENIED) {
-          setErrorMessage('Location permission is required to find nearby parking. Please allow it and try again.');
+          setErrorMessage(t.landing.permissionDenied);
         } else {
-          setErrorMessage('Could not get your location. Please try again.');
+          setErrorMessage(t.landing.locationError);
         }
       },
       { timeout: 10000 }
@@ -43,7 +43,7 @@ function LandingPage({ onNavigate, onFindParking }) {
 
   return (
     // Full-screen white background — centers the card vertically and horizontally
-    <div style={styles.screen}>
+    <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
       {/* Content card — constrained to mobile width (max 360px) */}
       <div style={styles.card}>
         {/* Blue rounded icon box with car emoji — no icon library needed */}
@@ -55,7 +55,7 @@ function LandingPage({ onNavigate, onFindParking }) {
         <h1 style={styles.title}>ParkMe</h1>
 
         {/* Tagline */}
-        <p style={styles.subtitle}>Find nearby parking easily and save time on the move.</p>
+        <p style={styles.subtitle}>{t.landing.subtitle}</p>
 
         {/* Main CTA — merges disabled style when loading */}
         <button
@@ -63,7 +63,7 @@ function LandingPage({ onNavigate, onFindParking }) {
           onClick={handleClick}
           disabled={isLoading}
         >
-          {isLoading ? 'Getting location...' : 'Find Parking'}
+          {isLoading ? t.landing.loading : t.landing.title}
         </button>
 
         {/* Error shown only after a failed or denied location request */}

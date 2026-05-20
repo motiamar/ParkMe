@@ -27,6 +27,10 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.NameEn).HasColumnName("name_en");
+            entity.Property(e => e.NameHe).HasColumnName("name_he");
+            entity.Property(e => e.AddressEn).HasColumnName("address_en");
+            entity.Property(e => e.AddressHe).HasColumnName("address_he");
             entity.Property(e => e.Latitude).HasColumnName("latitude");
             entity.Property(e => e.Longitude).HasColumnName("longitude");
             entity.Property(e => e.PricePerHour).HasColumnName("price_per_hour");
