@@ -11,9 +11,8 @@ public class AppDbContext : DbContext
     // The options (connection string, provider, etc.) are injected from Program.cs.
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    // DbSet<ParkingLot> represents the parking_lots table.
-    // You query it like a list: _db.ParkingLots.ToListAsync()
     public DbSet<ParkingLot> ParkingLots { get; set; }
+    public DbSet<UserFavorite> UserFavorites { get; set; }
 
     // OnModelCreating is called once at startup to configure the mapping
     // between C# property names (PascalCase) and PostgreSQL column names (snake_case).
@@ -39,6 +38,15 @@ public class AppDbContext : DbContext
             entity.Ignore(e => e.Distance);
 
             entity.Property(e => e.ImageUrl).HasColumnName("image_url");
+        });
+
+        modelBuilder.Entity<UserFavorite>(entity =>
+        {
+            entity.ToTable("user_favorites");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ParkingLotId).HasColumnName("parking_lot_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         });
     }
 }

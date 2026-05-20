@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ParkingLotDetails from './ParkingLotDetails';
+import { getOrCreateUserId } from '../utils/userId';
+import { fetchFavoriteIds, addFavorite, removeFavorite } from '../utils/favoritesApi';
 
 // Leaflet map library — free, open-source, no API key required.
 // Circle + CircleMarker are used for the user location dot to avoid a known
@@ -78,6 +80,8 @@ function NearbyParkingPage({ location }) {
   // To add more options later, add another value here and a button in the UI below.
   const [selectedSort, setSelectedSort] = useState('default');
 
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+
   // panelTop: how far from the top of the screen the panel starts (in vh units).
   // Lower value = panel higher up = more list visible, less map visible.
   const [panelTop, setPanelTop]       = useState(SNAP_PEEK);
@@ -89,6 +93,45 @@ function NearbyParkingPage({ location }) {
   // dragRef stores drag state that must NOT trigger re-renders on every pixel moved.
   // Using a ref avoids creating a new render on every pointermove.
   const dragRef = useRef({ active: false, startY: 0, startTop: SNAP_PEEK });
+
+  // ---- Load the current user's favorite IDs once on mount ----
+  useEffect(() => {
+    async function loadFavorites() {
+      try {
+        const userId = getOrCreateUserId();
+        const ids = await fetchFavoriteIds(userId);
+        setFavoriteIds(new Set(ids));
+      } catch {
+        // favorites unavailable — star states stay empty, not a fatal error
+      }
+    }
+    loadFavorites();
+  }, []);
+
+  // ---- Toggle favorite for a parking lot ----
+  // Optimistic update: flip the local Set immediately, then sync with the backend.
+  // On error, the Set is reverted so the UI stays consistent with the server.
+  async function toggleFavorite(lotId) {
+    const userId = getOrCreateUserId();
+    const isFav = favoriteIds.has(lotId);
+
+    setFavoriteIds(prev => {
+      const next = new Set(prev);
+      if (isFav) next.delete(lotId); else next.add(lotId);
+      return next;
+    });
+
+    try {
+      if (isFav) await removeFavorite(userId, lotId);
+      else await addFavorite(userId, lotId);
+    } catch {
+      setFavoriteIds(prev => {
+        const next = new Set(prev);
+        if (isFav) next.add(lotId); else next.delete(lotId);
+        return next;
+      });
+    }
+  }
 
   // ---- Fetch parking lots from the backend whenever selectedSort changes ----
   // The backend does the sorting — the frontend only builds the URL and passes
@@ -165,7 +208,14 @@ function NearbyParkingPage({ location }) {
   // If a card was tapped, show the details view instead of the list.
   // onBack clears selectedLot, which returns to the normal list.
   if (selectedLot) {
-    return <ParkingLotDetails lot={selectedLot} onBack={() => setSelectedLot(null)} />;
+    return (
+      <ParkingLotDetails
+        lot={selectedLot}
+        onBack={() => setSelectedLot(null)}
+        isFavorite={favoriteIds.has(selectedLot.id)}
+        onToggleFavorite={toggleFavorite}
+      />
+    );
   }
 
   return (
@@ -355,12 +405,21 @@ function NearbyParkingPage({ location }) {
                   onClick={() => setSelectedLot(lot)}
                 >
 
-                  {/* Top row: bold name on left, coloured price on right */}
+                  {/* Top row: bold name on left, price + star on right */}
                   <div style={styles.cardTopRow}>
                     <p style={styles.lotName}>{lot.name}</p>
-                    <p style={styles.lotPrice}>
-                      {lot.pricePerHour === 0 ? 'FREE' : `₪${lot.pricePerHour}/hr`}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <p style={styles.lotPrice}>
+                        {lot.pricePerHour === 0 ? 'FREE' : `₪${lot.pricePerHour}/hr`}
+                      </p>
+                      <button
+                        style={styles.starBtn}
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(lot.id); }}
+                        aria-label={favoriteIds.has(lot.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {favoriteIds.has(lot.id) ? '★' : '☆'}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Address */}
@@ -621,6 +680,17 @@ const styles = {
     fontWeight: '600',
     padding: '3px 10px',
     borderRadius: '999px',
+  },
+
+  starBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '1.3rem',
+    color: '#f59e0b',
+    padding: '0 2px',
+    lineHeight: 1,
+    flexShrink: 0,
   },
 };
 

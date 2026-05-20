@@ -19,7 +19,7 @@ function calcDrivingTime(distanceKm) {
 // Props:
 //   lot    – the parking lot object as returned by the backend API
 //   onBack – callback to return to the list (clears selectedLot in NearbyParkingPage)
-function ParkingLotDetails({ lot, onBack }) {
+function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite }) {
 
   // Price display
   const isFree    = lot.pricePerHour === 0;
@@ -70,6 +70,17 @@ function ParkingLotDetails({ lot, onBack }) {
           <button onClick={onBack} style={styles.backBtn} aria-label="Back">
             ‹
           </button>
+
+          {/* Star button — top-right of image, shown only when favorites are wired up */}
+          {onToggleFavorite && (
+            <button
+              onClick={() => onToggleFavorite(lot.id)}
+              style={styles.starBtn}
+              aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {isFavorite ? '★' : '☆'}
+            </button>
+          )}
         </div>
 
         {/* ================================================================
@@ -225,6 +236,26 @@ const styles = {
     boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
     zIndex: 10,
     paddingBottom: 2, // optical centre for the ‹ glyph
+  },
+
+  // Star button — mirrors back button position but top-right
+  starBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 38,
+    height: 38,
+    borderRadius: '50%',
+    backgroundColor: '#ffffff',
+    border: 'none',
+    fontSize: '1.4rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+    zIndex: 10,
+    color: '#f59e0b',
   },
 
   // White rounded sheet — overlaps image by 24 px via negative margin
