@@ -21,12 +21,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ParkingLot>(entity =>
         {
             // Tell EF Core the table in Supabase is called "parking_lots".
-            entity.ToTable("parking_lots");
+            entity.ToTable("parking_lots", "public");
 
             // Map each C# property to its matching column name in the database.
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Name).HasColumnName("name");
-            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Ignore(e => e.Name);
+            entity.Ignore(e => e.Address);
             entity.Property(e => e.NameEn).HasColumnName("name_en");
             entity.Property(e => e.NameHe).HasColumnName("name_he");
             entity.Property(e => e.AddressEn).HasColumnName("address_en");
@@ -40,6 +40,8 @@ public class AppDbContext : DbContext
             // Distance is calculated in the backend from the user's GPS coordinates.
             // It does not exist as a column in the database — EF Core should ignore it.
             entity.Ignore(e => e.Distance);
+            entity.Ignore(e => e.DrivingDistanceKm);
+            entity.Ignore(e => e.DrivingTimeMinutes);
 
             entity.Property(e => e.ImageUrl).HasColumnName("image_url");
         });

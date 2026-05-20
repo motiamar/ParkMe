@@ -13,52 +13,19 @@ public class ParkingLotService
         Timeout = TimeSpan.FromSeconds(8)
     };
 
-    private readonly string _dataFilePath;
     private readonly AppDbContext _db;
 
-    private static readonly JsonSerializerOptions _jsonOptions = new()
+    public ParkingLotService(AppDbContext db)
     {
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true
-    };
-
-    public ParkingLotService(IWebHostEnvironment env, AppDbContext db)
-    {
-        _dataFilePath = Path.Combine(env.ContentRootPath, "Data", "parkingLots.json");
         _db = db;
     }
 
-    // Tries to load parking lots from Supabase.
-    // Falls back to the local JSON file if the database is unreachable or empty.
     public async Task<List<ParkingLot>> GetAllAsync()
     {
-        try
-        {
-            var lots = await _db.ParkingLots.ToListAsync();
-
-            // If Supabase returned rows, use them.
-            if (lots.Count > 0)
-                return lots;
-        }
-        catch (Exception ex)
-        {
-            // Database is unreachable (e.g. wrong password, no internet).
-            // Log a warning and use the JSON file as a backup.
-            Console.WriteLine($"[ParkingLotService] Could not reach Supabase, using JSON fallback. Error: {ex.Message}");
-        }
-
-        // Fallback: load from the local JSON file.
-        return await GetAllFromFileAsync();
-    }
-
-    // Reads parking lots from the local JSON backup file.
-    private async Task<List<ParkingLot>> GetAllFromFileAsync()
-    {
-        if (!File.Exists(_dataFilePath))
-            return [];
-
-        var json = await File.ReadAllTextAsync(_dataFilePath);
-        return JsonSerializer.Deserialize<List<ParkingLot>>(json, _jsonOptions) ?? [];
+        return await _db.ParkingLots
+            .AsNoTracking()
+            .OrderBy(lot => lot.Id)
+            .ToListAsync();
     }
 
     // Returns all parking lots sorted by the given criterion.
@@ -162,9 +129,4 @@ public class ParkingLotService
         }
     }
 
-    public async Task SaveAllAsync(List<ParkingLot> parkingLots)
-    {
-        var json = JsonSerializer.Serialize(parkingLots, _jsonOptions);
-        await File.WriteAllTextAsync(_dataFilePath, json);
-    }
 }
