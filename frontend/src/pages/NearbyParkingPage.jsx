@@ -42,7 +42,7 @@ const API_URL = 'http://localhost:5176/api/parkinglots';
 // The two snap positions for the draggable panel (% of viewport height from the top).
 // PEEK   = panel is small, most of the map is visible.
 // HALF   = panel covers roughly half the screen (default on load).
-const SNAP_PEEK = 47;
+const SNAP_PEEK = 62;
 const SNAP_HALF = 15;
 
 function formatDrivingTimeLocalized(minutes, labels) {
@@ -93,6 +93,9 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
   // isDragging: true only while the user holds the handle.
   // Used to disable the CSS transition so dragging feels instant.
   const [isDragging, setIsDragging]   = useState(false);
+
+  // settingsOpen: controls visibility of the settings side panel.
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // dragRef stores drag state that must NOT trigger re-renders on every pixel moved.
   // Using a ref avoids creating a new render on every pointermove.
@@ -189,7 +192,7 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
     // Convert pixel delta to viewport-height units
     const deltaVh = ((e.clientY - dragRef.current.startY) / window.innerHeight) * 100;
     // Clamp so the panel cannot go fully off-screen in either direction
-    const newTop = Math.max(8, Math.min(78, dragRef.current.startTop + deltaVh));
+    const newTop = Math.max(8, Math.min(86, dragRef.current.startTop + deltaVh));
     setPanelTop(newTop);
   }
 
@@ -226,6 +229,76 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
 
   return (
     <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
+
+      {/* Gear button — fixed in the top-left corner above the map */}
+      <button
+        style={styles.gearBtn}
+        onClick={() => setSettingsOpen(o => !o)}
+        aria-label={language === 'he' ? 'הגדרות' : 'Settings'}
+      >
+        <svg
+          width="26" height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#1f2937"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      </button>
+
+      {/* Settings side panel + backdrop */}
+      {settingsOpen && (
+        <>
+          <div style={styles.settingsBackdrop} onClick={() => setSettingsOpen(false)} />
+          <div style={styles.settingsPanel}>
+            <div style={styles.settingsPanelHeader}>
+              <span style={styles.settingsPanelTitle}>
+                {language === 'he' ? 'הגדרות' : 'Settings'}
+              </span>
+              <button
+                style={styles.settingsCloseBtn}
+                onClick={() => setSettingsOpen(false)}
+                aria-label={language === 'he' ? 'סגור' : 'Close'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Language section */}
+            <div style={styles.settingsSection}>
+              <p style={styles.settingsSectionLabel}>
+                {language === 'he' ? 'שפה' : 'Language'}
+              </p>
+              <div style={styles.settingsBtnGroup}>
+                <button
+                  style={language === 'he' ? styles.settingsBtnActive : styles.settingsBtn}
+                  onClick={() => { if (language !== 'he') onToggleLanguage(); }}
+                >
+                  עברית
+                </button>
+                <button
+                  style={language === 'en' ? styles.settingsBtnActive : styles.settingsBtn}
+                  onClick={() => { if (language !== 'en') onToggleLanguage(); }}
+                >
+                  English
+                </button>
+              </div>
+            </div>
+
+            {/* Text size section */}
+            <div style={styles.settingsSection}>
+              <p style={styles.settingsSectionLabel}>
+                {language === 'he' ? 'גודל טקסט' : 'Text Size'}
+              </p>
+              <TextSizeSelector labels={t.textSize} />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ==============================================================
           MAP AREA
@@ -340,133 +413,121 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
           transition: isDragging ? 'none' : 'top 0.3s ease',
         }}
       >
-        {/* Drag handle — the ONLY element that initiates a drag.
-            Keeping drag events here (not on the whole panel) means the
-            list below can still scroll normally with touch or mouse. */}
-        <div
-          style={styles.dragHandle}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-        />
+        {/* ── Sticky header — never scrolls away ─────────────────────────
+            Contains the drag handle, title, and sort buttons.
+            flexShrink:0 ensures it stays at the top as content grows. */}
+        <div style={styles.panelStickyHeader}>
+          <div
+            style={styles.dragHandle}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          />
 
-        <div style={styles.panelHeaderRow}>
-          <h2 style={{ ...styles.panelTitle, textAlign: language === 'he' ? 'right' : 'left' }}>{t.nearby.title}</h2>
-          <div style={styles.headerControls}>
-            <TextSizeSelector labels={t.textSize} />
-            <button
-              type="button"
-              onClick={onToggleLanguage}
-              style={styles.languageToggle}
-            >
-              {t.toggleLanguage}
-            </button>
+          <div style={styles.panelHeaderRow}>
+            <h2 style={{ ...styles.panelTitle, textAlign: language === 'he' ? 'right' : 'left' }}>{t.nearby.title}</h2>
+          </div>
+
+          {/* Sort buttons */}
+          <div style={styles.sortRow}>
+            {[
+              { label: t.nearby.default,  value: 'default'  },
+              { label: t.nearby.closest,  value: 'distance' },
+              { label: t.nearby.cheapest, value: 'price'    },
+            ].map(({ label, value }) => (
+              <button
+                key={value}
+                onClick={() => setSelectedSort(value)}
+                style={selectedSort === value ? styles.sortBtnActive : styles.sortBtn}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Sort buttons — clicking a button sets selectedSort, which triggers a
-            re-fetch with the correct ?sortBy= query param. The backend does the
-            actual sorting; no frontend .sort() is used anywhere.
-            To add more options later (e.g. "Balanced"), add an entry to this array
-            and make sure the backend controller accepts the new sortBy value. */}
-        <div style={styles.sortRow}>
-          {[
-            { label: t.nearby.default,  value: 'default'  },
-            { label: t.nearby.closest,  value: 'distance' },
-            { label: t.nearby.cheapest, value: 'price'    },
-          ].map(({ label, value }) => (
-            <button
-              key={value}
-              onClick={() => setSelectedSort(value)}
-              style={selectedSort === value ? styles.sortBtnActive : styles.sortBtn}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {/* ── Scrollable content area ──────────────────────────────────── */}
+        <div style={styles.panelScrollable}>
 
-        {/* ---- Loading state ---- */}
-        {isLoading && (
-          <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.loading}</p>
-        )}
+          {/* ---- Loading state ---- */}
+          {isLoading && (
+            <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.loading}</p>
+          )}
 
-        {/* ---- Error state ---- */}
-        {!isLoading && error && (
-          <div style={styles.errorBox}>
-            <p style={{ ...styles.errorText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.loadError}</p>
-            <p style={styles.errorDetail}>{error}</p>
-            <p style={styles.errorDetail}>{t.nearby.backendHint}</p>
-          </div>
-        )}
+          {/* ---- Error state ---- */}
+          {!isLoading && error && (
+            <div style={styles.errorBox}>
+              <p style={{ ...styles.errorText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.loadError}</p>
+              <p style={styles.errorDetail}>{error}</p>
+              <p style={styles.errorDetail}>{t.nearby.backendHint}</p>
+            </div>
+          )}
 
-        {/* ---- Empty state ---- */}
-        {!isLoading && !error && parkingLots.length === 0 && (
-          <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.empty}</p>
-        )}
+          {/* ---- Empty state ---- */}
+          {!isLoading && !error && parkingLots.length === 0 && (
+            <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.empty}</p>
+          )}
 
-        {/* ---- Success state: one card per parking lot ---- */}
-        {!isLoading && !error && parkingLots.length > 0 && (
-          <ul style={styles.list}>
-            {parkingLots.map((lot) => {
-              const distKm = lot.drivingDistanceKm ?? null;
-              const travelMinutes = lot.drivingTimeMinutes ?? null;
+          {/* ---- Success state: one card per parking lot ---- */}
+          {!isLoading && !error && parkingLots.length > 0 && (
+            <ul style={styles.list}>
+              {parkingLots.map((lot) => {
+                const distKm = lot.drivingDistanceKm ?? null;
+                const travelMinutes = lot.drivingTimeMinutes ?? null;
 
-              // Clicking a card stores the lot in selectedLot state,
-              // which swaps the list view for ParkingLotDetails.
-              return (
-                <li
-                  key={lot.id}
-                  style={{ ...styles.card, cursor: 'pointer' }}
-                  onClick={() => setSelectedLot(lot)}
-                >
-
-                  {/* Top row: bold name on left, price + star on right */}
-                  <div style={styles.cardTopRow}>
-                    <p style={{ ...styles.lotName, textAlign: language === 'he' ? 'right' : 'left' }}>{getLotName(lot, language)}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <p style={styles.lotPrice}>
-                        {lot.pricePerHour === 0 ? t.nearby.free : `₪${lot.pricePerHour}${t.nearby.hrSuffix}`}
-                      </p>
-                      <button
-                        style={styles.starBtn}
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(lot.id); }}
-                        aria-label={favoriteIds.has(lot.id) ? t.details.removeFavorite : t.details.addFavorite}
-                      >
-                        {favoriteIds.has(lot.id) ? '★' : '☆'}
-                      </button>
+                return (
+                  <li
+                    key={lot.id}
+                    style={{ ...styles.card, cursor: 'pointer' }}
+                    onClick={() => setSelectedLot(lot)}
+                  >
+                    {/* Top row: bold name on left, price + star on right */}
+                    <div style={styles.cardTopRow}>
+                      <p style={{ ...styles.lotName, textAlign: language === 'he' ? 'right' : 'left' }}>{getLotName(lot, language)}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <p style={styles.lotPrice}>
+                          {lot.pricePerHour === 0 ? t.nearby.free : `₪${lot.pricePerHour}${t.nearby.hrSuffix}`}
+                        </p>
+                        <button
+                          style={styles.starBtn}
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(lot.id); }}
+                          aria-label={favoriteIds.has(lot.id) ? t.details.removeFavorite : t.details.addFavorite}
+                        >
+                          {favoriteIds.has(lot.id) ? '★' : '☆'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Address */}
-                  <p style={{ ...styles.lotAddress, textAlign: language === 'he' ? 'right' : 'left' }}>{getLotAddress(lot, language)}</p>
+                    {/* Address */}
+                    <p style={{ ...styles.lotAddress, textAlign: language === 'he' ? 'right' : 'left' }}>{getLotAddress(lot, language)}</p>
 
-                  {/* Bottom row: availability badge (left) + distance (right) */}
-                  <div style={styles.cardBottomRow}>
-                    <span style={{
-                      ...styles.badge,
-                      backgroundColor: lot.availableSpaces === 0 ? '#fef2f2' : '#f0fdf4',
-                      color:           lot.availableSpaces === 0 ? '#dc2626' : '#16a34a',
-                    }}>
-                      {lot.availableSpaces === 0
-                        ? t.nearby.full
-                        : `${lot.availableSpaces} / ${lot.totalSpaces} ${t.nearby.spaces}`}
+                    {/* Bottom row: availability badge (left) + distance (right) */}
+                    <div style={styles.cardBottomRow}>
+                      <span style={{
+                        ...styles.badge,
+                        backgroundColor: lot.availableSpaces === 0 ? '#fef2f2' : '#f0fdf4',
+                        color:           lot.availableSpaces === 0 ? '#dc2626' : '#16a34a',
+                      }}>
+                        {lot.availableSpaces === 0
+                          ? t.nearby.full
+                          : `${lot.availableSpaces} / ${lot.totalSpaces} ${t.nearby.spaces}`}
+                      </span>
+
+                      <span style={styles.distanceText}>
+                        {distKm !== null ? `↗ ${distKm.toFixed(1)} km` : t.nearby.distanceUnavailable}
+                      </span>
+                    </div>
+
+                    <span style={styles.etaText}>
+                      {travelMinutes !== null ? `⏱ ${formatDrivingTimeLocalized(travelMinutes, t.nearby)}` : t.nearby.travelTimeUnavailable}
                     </span>
-
-                    <span style={styles.distanceText}>
-                      {distKm !== null ? `↗ ${distKm.toFixed(1)} km` : t.nearby.distanceUnavailable}
-                    </span>
-                  </div>
-
-                  <span style={styles.etaText}>
-                    {travelMinutes !== null ? `⏱ ${formatDrivingTimeLocalized(travelMinutes, t.nearby)}` : t.nearby.travelTimeUnavailable}
-                  </span>
-
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -494,7 +555,7 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    height: '60%',
+    bottom: 0,
     zIndex: 0,
   },
 
@@ -524,10 +585,24 @@ const styles = {
     backgroundColor: '#ffffff',
     borderRadius: '24px 24px 0 0',
     boxShadow: '0 -6px 24px rgba(0,0,0,0.13)',
-    overflowY: 'auto',
-    padding: '10px 16px 32px',
     boxSizing: 'border-box',
     zIndex: 1000,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+
+  // Sticky top section — drag handle + title + sort buttons never scroll away
+  panelStickyHeader: {
+    flexShrink: 0,
+    padding: '10px 16px 0',
+  },
+
+  // Scrollable area below the sticky header
+  panelScrollable: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '0 16px 32px',
   },
 
   // Drag handle bar — this is the only element that fires drag events.
@@ -559,29 +634,6 @@ const styles = {
     fontWeight: '700',
     color: '#111827',
     margin: 0,
-  },
-
-  headerControls: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
-    marginInlineStart: 'auto',
-  },
-
-  languageToggle: {
-    minHeight: '36px',
-    padding: '0 14px',
-    borderRadius: '999px',
-    border: '1px solid rgba(37,99,235,0.18)',
-    backgroundColor: '#ffffff',
-    color: '#2563eb',
-    fontSize: '0.88rem',
-    fontWeight: '700',
-    cursor: 'pointer',
-    boxShadow: '0 1px 4px rgba(15,23,42,0.08)',
-    lineHeight: 1,
-    whiteSpace: 'nowrap',
   },
 
   // Row that holds the three sort buttons
@@ -734,6 +786,121 @@ const styles = {
     padding: '0 2px',
     lineHeight: 1,
     flexShrink: 0,
+  },
+
+  // Gear / settings button — floats above the map in the top-left corner
+  gearBtn: {
+    position: 'absolute',
+    top: '12px',
+    left: '12px',
+    zIndex: 1100,
+    width: '40px',
+    height: '40px',
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  },
+
+  // Semi-transparent backdrop — closes the panel on click
+  settingsBackdrop: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    zIndex: 1200,
+  },
+
+  // Side panel that slides in from the left
+  settingsPanel: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: '260px',
+    maxWidth: '80vw',
+    backgroundColor: '#ffffff',
+    zIndex: 1300,
+    boxShadow: '4px 0 24px rgba(0,0,0,0.15)',
+    padding: '20px 16px',
+    boxSizing: 'border-box',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '28px',
+  },
+
+  // Header row inside the panel: title + close button
+  settingsPanelHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  settingsPanelTitle: {
+    fontSize: '1.05rem',
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  settingsCloseBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    color: '#6b7280',
+    padding: '4px',
+    lineHeight: 1,
+    borderRadius: '6px',
+  },
+
+  // One section inside the panel (language or text-size)
+  settingsSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+
+  settingsSectionLabel: {
+    fontSize: '0.78rem',
+    fontWeight: '600',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    margin: 0,
+  },
+
+  // Group of side-by-side language / option buttons
+  settingsBtnGroup: {
+    display: 'flex',
+    gap: '8px',
+  },
+
+  settingsBtn: {
+    flex: 1,
+    padding: '9px 0',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    backgroundColor: '#f9fafb',
+    color: '#374151',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
+
+  settingsBtnActive: {
+    flex: 1,
+    padding: '9px 0',
+    border: '1.5px solid #2563eb',
+    borderRadius: '10px',
+    backgroundColor: '#eff6ff',
+    color: '#2563eb',
+    fontSize: '0.9rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 1px 4px rgba(37,99,235,0.12)',
   },
 };
 
