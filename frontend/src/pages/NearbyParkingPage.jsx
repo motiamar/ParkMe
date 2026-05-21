@@ -9,7 +9,7 @@ import { fetchFavoriteIds, addFavorite, removeFavorite } from '../utils/favorite
 // Leaflet + Vite asset-path bug with the default marker icon images.
 // Parking lot markers use Marker + divIcon (HTML-based) for the same reason —
 // divIcon renders inline HTML instead of loading image files from disk.
-import { MapContainer, TileLayer, CircleMarker, Circle, Marker, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Circle, Marker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -34,6 +34,53 @@ const parkingIcon = L.divIcon({
   iconAnchor:  [13, 34],  // tip of the triangle sits exactly on the coordinate
   popupAnchor: [0, -36],
 });
+
+// Classic teardrop pin shown at the geocoded search location.
+// SVG path: circle merged into a downward-pointing shape, same style as Google Maps.
+// iconAnchor [16, 42] places the very tip of the pin on the exact coordinate.
+const searchLocationIcon = L.divIcon({
+  className: '',
+  html: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
+           <path d="M16 0C7.163 0 0 7.163 0 16c0 10.5 16 26 16 26S32 26.5 32 16C32 7.163 24.837 0 16 0z"
+                 fill="#16a34a" stroke="#ffffff" stroke-width="2"/>
+           <circle cx="16" cy="15" r="7" fill="#ffffff"/>
+         </svg>`,
+  iconSize:    [32, 42],
+  iconAnchor:  [16, 42],
+  popupAnchor: [0, -44],
+});
+
+// ---- Geocoding via Nominatim (OpenStreetMap) — free, no API key needed ----
+// Converts a text address/location into {lat, lng} coordinates.
+// Returns null when the address produces no results.
+async function geocodeAddress(query) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'he,en' } });
+  if (!res.ok) throw new Error('geocode request failed');
+  const data = await res.json();
+  if (data.length === 0) return null;
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
+
+// ---- MapCenterController — imperatively repositions the Leaflet map ----
+// Must live inside <MapContainer> to access the map instance via useMap().
+// Uses a string key built from the coordinates so the effect only fires when
+// the actual lat/lng values change — not on every render (which would happen
+// if the center array were used directly, since a new array is created each render).
+function MapCenterController({ center }) {
+  const map = useMap();
+  const prevKey = useRef(null);
+
+  useEffect(() => {
+    if (!center) return;
+    const key = `${center[0]},${center[1]}`;
+    if (key === prevKey.current) return;   // same coordinates — skip flyTo
+    prevKey.current = key;
+    map.flyTo(center, 16, { animate: true, duration: 0.8 });
+  }, [center, map]);
+
+  return null;
+}
 
 // Backend API URL — reads parking lots from Data/parkingLots.json via ParkingLotService.
 // CORS in backend/Program.cs allows http://localhost:5173.
@@ -100,6 +147,13 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
 
   // settingsOpen: controls visibility of the settings side panel.
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // searchQuery: current text typed in the map search input
+  const [searchQuery, setSearchQuery] = useState('');
+  // searchedLocation: [lat, lng] after a successful geocode; null = use user position
+  const [searchedLocation, setSearchedLocation] = useState(null);
+  // searchError: shown below the search bar when an address cannot be found
+  const [searchError, setSearchError] = useState(null);
 
   // dragRef stores drag state that must NOT trigger re-renders on every pixel moved.
   // Using a ref avoids creating a new render on every pointermove.
@@ -209,8 +263,36 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
     setPanelTop(prev => (prev < mid ? SNAP_HALF : SNAP_PEEK));
   }
 
+  // ---- Search submit: geocode the typed address then fly the map there ----
+  async function handleSearch() {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchError(null);
+    try {
+      const coords = await geocodeAddress(q);
+      if (!coords) {
+        setSearchError(t.nearby.searchNotFound);
+        return;
+      }
+      setSearchedLocation([coords.lat, coords.lng]);
+    } catch {
+      setSearchError(t.nearby.searchError);
+    }
+  }
+
+  // ---- Clear search: reset input and return map center to user's GPS location ----
+  function clearSearch() {
+    setSearchQuery('');
+    setSearchedLocation(null);
+    setSearchError(null);
+  }
+
   // Convert location prop to the [lat, lng] array Leaflet expects
   const userPosition = location ? [location.lat, location.lng] : null;
+
+  // mapCenter: what the map should be centered on.
+  // Follows searchedLocation when the user has searched; falls back to GPS position.
+  const mapCenter = searchedLocation ?? userPosition;
 
   // Apply the favorites filter client-side.
   // The backend already sorted parkingLots by the selected sort option;
@@ -311,6 +393,54 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
         </>
       )}
 
+      {/* Search bar — sits above the map, to the right of the gear button.
+          dir="ltr" on the wrapper gives consistent physical left/right layout
+          regardless of the app RTL setting; the input itself uses dir="rtl"
+          so Hebrew placeholder and text are right-aligned inside it. */}
+      <div style={styles.searchBarWrapper}>
+        <div style={styles.searchBar} dir="ltr">
+          {/* X clear button — appears on the left once text has been entered */}
+          {searchQuery.length > 0 && (
+            <button
+              style={styles.searchClearBtn}
+              onClick={clearSearch}
+              aria-label="נקה חיפוש"
+            >
+              ✕
+            </button>
+          )}
+
+          {/* Text input — dir="rtl" so Hebrew placeholder is right-aligned */}
+          <input
+            dir={language === 'he' ? 'rtl' : 'ltr'}
+            style={styles.searchInput}
+            type="text"
+            value={searchQuery}
+            placeholder={t.nearby.searchPlaceholder}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          />
+
+          {/* Magnifying-glass search button on the right */}
+          <button
+            style={styles.searchSubmitBtn}
+            onClick={handleSearch}
+            aria-label="חפש"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="#6b7280" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.5" y1="16.5" x2="22" y2="22" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Geocoding error message shown below the bar */}
+        {searchError && (
+          <p style={styles.searchError}>{searchError}</p>
+        )}
+      </div>
+
       {/* ==============================================================
           MAP AREA
           Covers the top 60% of the screen.
@@ -326,12 +456,20 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
       <div style={styles.mapArea}>
         {userPosition ? (
           <MapContainer
-            center={userPosition}
+            center={mapCenter ?? userPosition}
             zoom={16}
             style={{ width: '100%', height: '100%' }}
             zoomControl={false}        // hide +/- buttons — keeps the UI clean
             attributionControl={false} // hide © watermark for a cleaner look
           >
+            {/* Moves the map whenever mapCenter changes (search or clear) */}
+            <MapCenterController center={mapCenter} />
+
+            {/* Green teardrop pin at the geocoded search result */}
+            {searchedLocation && (
+              <Marker position={searchedLocation} icon={searchLocationIcon} />
+            )}
+
             {/* CartoDB Voyager tiles — free, no API key, modern Waze-like style.
                 Much cleaner and more colourful than the default OpenStreetMap tiles. */}
             <TileLayer
@@ -810,6 +948,84 @@ const styles = {
     padding: '0 2px',
     lineHeight: 1,
     flexShrink: 0,
+  },
+
+  // Wrapper that positions the search bar to the right of the gear button
+  searchBarWrapper: {
+    position: 'absolute',
+    top: '12px',
+    left: '62px',   // gear button is 40px wide + 12px margin + 10px gap
+    right: '12px',
+    zIndex: 1050,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+
+  // The pill-shaped search bar itself
+  searchBar: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: '999px',
+    border: '1px solid rgba(0,0,0,0.12)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.14)',
+    overflow: 'hidden',
+    height: '40px',
+  },
+
+  // Text input — grows to fill remaining space
+  searchInput: {
+    flex: 1,
+    border: 'none',
+    outline: 'none',
+    background: 'transparent',
+    fontSize: '0.9rem',
+    color: '#111827',
+    padding: '0 8px',
+    minWidth: 0,
+  },
+
+  // Magnifying-glass button on the right
+  searchSubmitBtn: {
+    flexShrink: 0,
+    width: '40px',
+    height: '40px',
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  },
+
+  // X clear button on the left — only shown when input has text
+  searchClearBtn: {
+    flexShrink: 0,
+    width: '36px',
+    height: '36px',
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.8rem',
+    color: '#9ca3af',
+    padding: 0,
+  },
+
+  // Error text shown below the search bar
+  searchError: {
+    margin: 0,
+    fontSize: '0.8rem',
+    color: '#dc2626',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: '8px',
+    padding: '4px 10px',
+    alignSelf: 'flex-start',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
   },
 
   // Gear / settings button — floats above the map in the top-left corner
