@@ -86,6 +86,10 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
 
   const [favoriteIds, setFavoriteIds] = useState(new Set());
 
+  // showFavoritesOnly: when true, only lots whose id is in favoriteIds are shown.
+  // Filtering is done client-side against the already-loaded favoriteIds Set.
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
   // panelTop: how far from the top of the screen the panel starts (in vh units).
   // Lower value = panel higher up = more list visible, less map visible.
   const [panelTop, setPanelTop]       = useState(SNAP_PEEK);
@@ -207,6 +211,13 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
 
   // Convert location prop to the [lat, lng] array Leaflet expects
   const userPosition = location ? [location.lat, location.lng] : null;
+
+  // Apply the favorites filter client-side.
+  // The backend already sorted parkingLots by the selected sort option;
+  // we just narrow the result down to lots the user has starred.
+  const displayedLots = showFavoritesOnly
+    ? parkingLots.filter(lot => favoriteIds.has(lot.id))
+    : parkingLots;
 
   // -------------------------------------------------------------------------
   // Render
@@ -429,7 +440,7 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
             <h2 style={{ ...styles.panelTitle, textAlign: language === 'he' ? 'right' : 'left' }}>{t.nearby.title}</h2>
           </div>
 
-          {/* Sort buttons */}
+          {/* Sort + filter buttons — one row, identical visual style */}
           <div style={styles.sortRow}>
             {[
               { label: t.nearby.default,  value: 'default'  },
@@ -444,6 +455,14 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
                 {label}
               </button>
             ))}
+
+            {/* Favorites filter — toggles showFavoritesOnly; sort still applies */}
+            <button
+              onClick={() => setShowFavoritesOnly(prev => !prev)}
+              style={showFavoritesOnly ? styles.sortBtnActive : styles.sortBtn}
+            >
+              {t.nearby.favorites}
+            </button>
           </div>
         </div>
 
@@ -464,15 +483,20 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
             </div>
           )}
 
-          {/* ---- Empty state ---- */}
+          {/* ---- Empty state (no lots from backend) ---- */}
           {!isLoading && !error && parkingLots.length === 0 && (
             <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.empty}</p>
           )}
 
-          {/* ---- Success state: one card per parking lot ---- */}
-          {!isLoading && !error && parkingLots.length > 0 && (
+          {/* ---- Favorites empty state (filter active but no matches) ---- */}
+          {!isLoading && !error && parkingLots.length > 0 && displayedLots.length === 0 && (
+            <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>{t.nearby.noFavorites}</p>
+          )}
+
+          {/* ---- Success state: one card per displayed parking lot ---- */}
+          {!isLoading && !error && displayedLots.length > 0 && (
             <ul style={styles.list}>
-              {parkingLots.map((lot) => {
+              {displayedLots.map((lot) => {
                 const distKm = lot.drivingDistanceKm ?? null;
                 const travelMinutes = lot.drivingTimeMinutes ?? null;
 
