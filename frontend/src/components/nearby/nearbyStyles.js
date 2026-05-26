@@ -19,6 +19,50 @@ export const styles = {
     zIndex: 0,
   },
 
+  mapActionDock: {
+    position: 'absolute',
+    right: '12px',
+    zIndex: 1060,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '8px',
+    pointerEvents: 'none',
+  },
+
+  mapActionBtn: {
+    pointerEvents: 'auto',
+    width: '38px',
+    height: '38px',
+    border: '1px solid rgba(37,99,235,0.18)',
+    borderRadius: '999px',
+    backgroundColor: '#ffffff',
+    color: '#2563eb',
+    boxShadow: '0 2px 10px rgba(15,23,42,0.12)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+  },
+
+  mapActionIcon: {
+    fontSize: '1rem',
+    lineHeight: 1,
+  },
+
+  mapNotice: {
+    pointerEvents: 'none',
+    maxWidth: '210px',
+    padding: '8px 10px',
+    borderRadius: '10px',
+    backgroundColor: 'rgba(17,24,39,0.92)',
+    color: '#ffffff',
+    fontSize: '0.82rem',
+    lineHeight: 1.35,
+    boxShadow: '0 4px 16px rgba(0,0,0,0.16)',
+  },
+
   noMapFallback: {
     width: '100%',
     height: '100%',

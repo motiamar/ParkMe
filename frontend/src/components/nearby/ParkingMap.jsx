@@ -11,7 +11,7 @@ import { styles } from './nearbyStyles';
 //   • Green "P" pins for every parking lot that has coordinates
 //   • Teardrop search-result pin (when searchedLocation is set)
 //   • MapCenterController to fly the map on center changes
-function ParkingMap({ userPosition, mapCenter, parkingLots, searchedLocation, onSelectLot, language, t }) {
+function ParkingMap({ userPosition, mapCenter, recenterToken, parkingLots, searchedLocation, onSelectLot, language, t }) {
   if (!userPosition) {
     return (
       <div style={styles.noMapFallback}>
@@ -31,7 +31,7 @@ function ParkingMap({ userPosition, mapCenter, parkingLots, searchedLocation, on
       attributionControl={false}
     >
       {/* Moves the map whenever mapCenter changes (search or clear) */}
-      <MapCenterController center={mapCenter} />
+      <MapCenterController center={mapCenter} recenterToken={recenterToken} />
 
       {/* CartoDB Voyager — free, no API key, modern Waze-like style */}
       <TileLayer

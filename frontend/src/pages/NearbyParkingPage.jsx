@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import ParkingLotDetails from './ParkingLotDetails';
 import ParkingMap        from '../components/nearby/ParkingMap';
@@ -33,6 +33,9 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
   const [searchQuery,     setSearchQuery]     = useState('');
   const [searchedLocation, setSearchedLocation] = useState(null);
   const [searchError,     setSearchError]     = useState(null);
+  const [locationNotice,  setLocationNotice]  = useState(null);
+  const [recenterToken,   setRecenterToken]   = useState(0);
+  const noticeTimerRef = useRef(null);
 
   // Custom hooks
   const { favoriteIds, toggleFavorite }                              = useFavorites();
@@ -67,6 +70,34 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
     setSearchedLocation(null);
     setSearchError(null);
   }
+
+  function showLocationNotice() {
+    setLocationNotice(t.nearby.locationRequired);
+    if (noticeTimerRef.current) {
+      window.clearTimeout(noticeTimerRef.current);
+    }
+    noticeTimerRef.current = window.setTimeout(() => {
+      setLocationNotice(null);
+      noticeTimerRef.current = null;
+    }, 2600);
+  }
+
+  function handleRecenterMap() {
+    if (!userPosition) {
+      showLocationNotice();
+      return;
+    }
+
+    setSearchedLocation(null);
+    setRecenterToken(token => token + 1);
+    setLocationNotice(null);
+  }
+
+  useEffect(() => () => {
+    if (noticeTimerRef.current) {
+      window.clearTimeout(noticeTimerRef.current);
+    }
+  }, []);
 
   // Show detail view when a parking lot card or map marker is tapped
   if (selectedLot) {
@@ -118,9 +149,32 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
 
       {/* Map fills the full screen behind the panel */}
       <div style={styles.mapArea}>
+        <div
+          style={{
+            ...styles.mapActionDock,
+            bottom: `calc(${100 - panelTop}vh + 16px)`,
+          }}
+        >
+          <button
+            style={styles.mapActionBtn}
+            onClick={handleRecenterMap}
+            aria-label={language === 'he' ? 'מרכז למיקום שלי' : 'Recenter to my location'}
+            title={language === 'he' ? 'מרכז למיקום שלי' : 'Recenter to my location'}
+          >
+            <span style={styles.mapActionIcon} aria-hidden="true">📍</span>
+          </button>
+
+          {locationNotice && (
+            <div style={styles.mapNotice} role="status" aria-live="polite">
+              {locationNotice}
+            </div>
+          )}
+        </div>
+
         <ParkingMap
           userPosition={userPosition}
           mapCenter={mapCenter}
+          recenterToken={recenterToken}
           parkingLots={parkingLots}
           searchedLocation={searchedLocation}
           onSelectLot={setSelectedLot}
