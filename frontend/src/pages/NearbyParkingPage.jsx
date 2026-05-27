@@ -37,9 +37,16 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
   const [recenterToken,   setRecenterToken]   = useState(0);
   const noticeTimerRef = useRef(null);
 
+  // When the user searches a location, use it as the reference point for
+  // distance calculations instead of the GPS location.  searchedLocation is
+  // stored as [lat, lng] — convert to the {lat, lng} object useParkingLots expects.
+  const referenceLocation = searchedLocation
+    ? { lat: searchedLocation[0], lng: searchedLocation[1] }
+    : location;
+
   // Custom hooks
   const { favoriteIds, toggleFavorite }                              = useFavorites();
-  const { parkingLots, isLoading, error }                            = useParkingLots({ selectedSort, location });
+  const { parkingLots, isLoading, error }                            = useParkingLots({ selectedSort, location: referenceLocation });
   const { panelTop, isDragging, handlePointerDown,
           handlePointerMove, handlePointerUp }                       = useDraggablePanel();
 
