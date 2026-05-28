@@ -95,6 +95,8 @@ export const styles = {
   panelStickyHeader: {
     flexShrink: 0,
     padding: '10px 16px 0',
+    touchAction: 'none',  // prevent browser scroll-handling from eating touch events
+    userSelect: 'none',   // prevent text selection while dragging
   },
 
   panelScrollable: {
@@ -109,9 +111,6 @@ export const styles = {
     backgroundColor: '#d1d5db',
     borderRadius: 3,
     margin: '0 auto 14px',
-    cursor: 'grab',
-    touchAction: 'none',
-    userSelect: 'none',
   },
 
   panelHeaderRow: {

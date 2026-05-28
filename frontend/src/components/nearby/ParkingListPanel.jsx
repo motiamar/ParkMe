@@ -33,14 +33,16 @@ function ParkingListPanel({
     }}>
 
       {/* ── Sticky header — drag handle + title + sort/filter buttons ── */}
-      <div style={styles.panelStickyHeader}>
-        <div
-          style={styles.dragHandle}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-        />
+      {/* The entire header is the drag target so the user doesn't need to hit the small pill. */}
+      <div
+        style={{ ...styles.panelStickyHeader, cursor: isDragging ? 'grabbing' : 'grab' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        {/* Visual handle pill — no longer the only drag target, kept as affordance hint */}
+        <div style={styles.dragHandle} />
         <div style={styles.panelHeaderRow}>
           <h2 style={{ ...styles.panelTitle, textAlign: language === 'he' ? 'right' : 'left' }}>
             {t.nearby.title}
