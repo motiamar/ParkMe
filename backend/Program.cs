@@ -22,7 +22,7 @@ builder.Services.AddCors(options =>
         // Allow both 5173 (Vite default) and 5175 (fallback if 5173 is taken).
         // Vite is configured to use 5173 with strictPort, but listing both prevents
         // a silent CORS failure if the port ever changes during development.
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5175", "https://park-me.vercel.app")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5175",  "https://park-mu5ryspb5-park-me-team.vercel.app")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
