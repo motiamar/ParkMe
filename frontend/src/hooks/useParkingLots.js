@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:5176/api/parkinglots';
+const API_URL = `${import.meta.env.VITE_API_URL}/api/parkinglots`;
 
 // Fetches parking lots from the backend whenever selectedSort or user location changes.
 // The backend handles all sorting — the hook only builds the URL and stores the result.

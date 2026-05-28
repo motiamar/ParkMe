@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5176/api/favorites';
+const API_BASE = `${import.meta.env.VITE_API_URL}/api/favorites`;
 
 export async function fetchFavoriteIds(userId) {
   const res = await fetch(`${API_BASE}/${userId}`);
