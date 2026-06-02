@@ -42,13 +42,13 @@ function LandingPage({ onNavigate, onFindParking, language, t }) {
   }
 
   return (
-    // Full-screen white background — centers the card vertically and horizontally
+    // Full-screen gradient background — centers the card vertically and horizontally
     <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
       {/* Content card — constrained to mobile width (max 360px) */}
       <div style={styles.card}>
-        {/* Blue rounded icon box with car emoji — no icon library needed */}
+        {/* Glassmorphism icon box with large "P" — parking app logo */}
         <div style={styles.iconBox}>
-          <span style={styles.iconEmoji}>🚗</span>
+          <span style={styles.iconLetter}>P</span>
         </div>
 
         {/* App name */}
@@ -76,13 +76,13 @@ function LandingPage({ onNavigate, onFindParking, language, t }) {
 // --- Styles ---
 
 const styles = {
-  // Outer wrapper: full viewport, white, centers the card
+  // Outer wrapper: full viewport, blue gradient, centers the card
   screen: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    backgroundColor: '#ffffff',
+    background: 'linear-gradient(160deg, #0f1f5c 0%, #1d4ed8 65%, #4f86f7 100%)',
     padding: '24px',
     boxSizing: 'border-box',
   },
@@ -97,44 +97,54 @@ const styles = {
     gap: '20px',
   },
 
-  // Blue rounded square that holds the app icon
+  // Glassmorphism rounded square — frosted overlay on the blue gradient
   iconBox: {
-    width: '88px',
-    height: '88px',
-    backgroundColor: '#2563eb',
-    borderRadius: '22px',
+    width: '110px',
+    height: '110px',
+    background: 'rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRadius: '28px',
+    border: '1.5px solid rgba(255,255,255,0.3)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2)',
     marginBottom: '8px',
   },
 
-  // Car emoji sized to fit the icon box
-  iconEmoji: {
-    fontSize: '2.4rem',
+  // Large bold "P" — parking app logo lettermark
+  iconLetter: {
+    fontSize: '3.8rem',
+    fontWeight: '800',
+    color: '#ffffff',
     lineHeight: 1,
+    textShadow: '0 2px 16px rgba(255,255,255,0.4)',
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    letterSpacing: '-1px',
+    userSelect: 'none',
   },
 
-  // Large bold app name
+  // Large bold app name — white on gradient
   title: {
     fontSize: '2.6rem',
     fontWeight: '700',
-    color: '#111827',
+    color: '#ffffff',
     margin: 0,
     letterSpacing: '-0.5px',
   },
 
-  // Muted tagline below the title
+  // Tagline — soft white on gradient
   subtitle: {
     fontSize: '1rem',
-    color: '#6b7280',
+    color: 'rgba(255,255,255,0.78)',
     margin: 0,
     textAlign: 'center',
     lineHeight: '1.6',
     maxWidth: '280px',
   },
 
-  // Full-width blue CTA button
+  // Full-width white CTA button — inverted for contrast on blue background
   button: {
     width: '100%',
     padding: '16px',
@@ -143,10 +153,11 @@ const styles = {
     cursor: 'pointer',
     borderRadius: '12px',
     border: 'none',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
+    backgroundColor: '#ffffff',
+    color: '#1d4ed8',
     marginTop: '8px',
     transition: 'opacity 0.15s',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
   },
 
   // Applied on top of button while location is being fetched
@@ -155,9 +166,9 @@ const styles = {
     cursor: 'not-allowed',
   },
 
-  // Red error text shown below the button on failure
+  // Soft red error text visible against the blue gradient
   error: {
-    color: '#dc2626',
+    color: '#fca5a5',
     fontSize: '0.9rem',
     margin: 0,
     textAlign: 'center',
