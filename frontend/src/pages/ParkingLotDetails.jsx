@@ -21,8 +21,12 @@ function formatDrivingTimeLocalized(minutes, labels) {
 //   lot    – the parking lot object as returned by the backend API
 //   onBack – callback to return to the list (clears selectedLot in NearbyParkingPage)
 function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite, language, t }) {
-  const selectedName = language === 'he' ? lot.nameHe : lot.nameEn;
-  const selectedAddress = language === 'he' ? lot.addressHe : lot.addressEn;
+  const selectedName = language === 'he'
+    ? (lot.nameHe || lot.nameEn || '—')
+    : (lot.nameEn || lot.nameHe || '—');
+  const selectedAddress = language === 'he'
+    ? (lot.addressHe || lot.addressEn || '—')
+    : (lot.addressEn || lot.addressHe || '—');
 
   // Price display
   const isFree    = lot.pricePerHour === 0;

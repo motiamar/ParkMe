@@ -43,35 +43,40 @@ public class ParkingLotService
     // Price notes:
     //   PricePerHour is a decimal, so no text parsing is needed. Lots with PricePerHour == 0
     //   are treated as free and appear first (they are genuinely the cheapest).
-    public async Task<List<ParkingLot>> GetSortedAsync(string? sortBy, double? userLat, double? userLng)
+    public async Task<PaginatedResult<ParkingLot>> GetSortedAsync(
+        string? sortBy, double? userLat, double? userLng,
+        int page = 1, int pageSize = 20)
     {
         var lots = await GetAllAsync();
 
         // Attach driving distance/time to every lot when user coordinates are provided.
-        // The frontend can then display realistic values without reimplementing routing.
+        // All lots are enriched before sorting so distance-sort is accurate across pages.
         if (userLat.HasValue && userLng.HasValue)
         {
             await EnrichWithDrivingMetricsAsync(lots, userLat.Value, userLng.Value);
         }
 
+        List<ParkingLot> sorted;
         if (sortBy == "price")
+            sorted = [.. lots.OrderBy(l => l.PricePerHour)];
+        else if (sortBy == "distance" && userLat.HasValue && userLng.HasValue)
+            sorted = [.. lots.OrderBy(l => l.Distance ?? double.MaxValue)];
+        else
+            sorted = lots;
+
+        var totalCount = sorted.Count;
+        var items = sorted
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return new PaginatedResult<ParkingLot>
         {
-            // Sort ascending by price — cheapest parking lot first.
-            return [.. lots.OrderBy(l => l.PricePerHour)];
-        }
-
-        if (sortBy == "distance")
-        {
-            // Distance requires user coordinates; without them we cannot sort meaningfully.
-            if (!userLat.HasValue || !userLng.HasValue)
-                return lots;
-
-            // Reuse the routing distance already computed above.
-            return [.. lots.OrderBy(l => l.Distance ?? double.MaxValue)];
-        }
-
-        // sortBy is null → return default order.
-        return lots;
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+        };
     }
 
     private static async Task EnrichWithDrivingMetricsAsync(List<ParkingLot> lots, double userLat, double userLng)

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import LandingPage from '../pages/LandingPage';
 import NearbyParkingPage from '../pages/NearbyParkingPage';
+import { usePwaInstall } from '../hooks/usePwaInstall';
 
 const translations = {
   he: {
@@ -20,6 +21,9 @@ const translations = {
       cheapest: 'הכי זול',
       favorites: 'מועדפים',
       noFavorites: 'אין חניונים מועדפים עדיין',
+      noFavoritesHint: 'לחץ על ★ בכל חניון כדי לשמור אותו כאן',
+      loadMore: 'טען עוד',
+      loadingMore: 'טוען...',
       searchPlaceholder: 'חפש חניה קרובה ליעד',
       searchNotFound: 'לא נמצא מיקום מתאים',
       searchError: 'שגיאה בחיפוש. נסה שוב.',
@@ -62,6 +66,10 @@ const translations = {
       medium: 'גודל טקסט: בינוני',
       large: 'גודל טקסט: גדול',
     },
+    settings: {
+      installApp: 'התקן אפליקציה',
+      installAppHint: 'הוסף לדף הבית לגישה מהירה',
+    },
   },
   en: {
     toggleLanguage: 'עברית',
@@ -80,6 +88,9 @@ const translations = {
       cheapest: 'Cheapest',
       favorites: 'Favorites',
       noFavorites: 'No favorite parking lots yet',
+      noFavoritesHint: 'Tap ★ on any parking lot to save it here',
+      loadMore: 'Load more',
+      loadingMore: 'Loading...',
       searchPlaceholder: 'Search for nearby parking',
       searchNotFound: 'No location found',
       searchError: 'Search failed. Please try again.',
@@ -122,6 +133,10 @@ const translations = {
       medium: 'Text size: medium',
       large: 'Text size: large',
     },
+    settings: {
+      installApp: 'Install App',
+      installAppHint: 'Add to home screen for quick access',
+    },
   },
 };
 
@@ -133,6 +148,7 @@ function App() {
   const [page, setPage] = useState('landing');
   const [location, setLocation] = useState(null);
   const [language, setLanguage] = useState('he');
+  const { canInstall, install } = usePwaInstall();
 
   useEffect(() => {
     document.documentElement.dir = language === 'he' ? 'rtl' : 'ltr';
@@ -162,6 +178,8 @@ function App() {
           language={language}
           t={t}
           onToggleLanguage={toggleLanguage}
+          canInstall={canInstall}
+          onInstall={install}
         />
       ) : (
         <LandingPage

@@ -16,35 +16,32 @@ public class ParkingLotsController : ControllerBase
     }
 
     // GET /api/parkinglots
-    // GET /api/parkinglots?sortBy=price
-    // GET /api/parkinglots?sortBy=distance&userLat=32.08&userLng=34.78
+    // GET /api/parkinglots?sortBy=price&page=1&pageSize=20
+    // GET /api/parkinglots?sortBy=distance&userLat=32.08&userLng=34.78&page=2
     //
     // Query parameters:
-    //   sortBy  – optional. Supported values: "distance" | "price".
-    //             Omitting it returns the default (file) order.
-    //             Unknown values → 400 Bad Request.
-    //   userLat – user's latitude.  Required when sortBy=distance.
-    //   userLng – user's longitude. Required when sortBy=distance.
+    //   sortBy   – optional. Supported values: "distance" | "price".
+    //   userLat  – user's latitude.  Required when sortBy=distance.
+    //   userLng  – user's longitude. Required when sortBy=distance.
+    //   page     – 1-based page number (default: 1).
+    //   pageSize – items per page, 1–100 (default: 20).
     //
-    // Sorting behaviour:
-    //   distance – closest parking lot first, calculated via Haversine formula.
-    //              Falls back to default order if userLat/userLng are missing.
-    //   price    – cheapest parking lot first (ascending PricePerHour).
-    //
-    // Invalid sortBy handling:
-    //   Returns 400 Bad Request so callers catch typos early rather than silently
-    //   getting an unexpected default order.
+    // Returns PaginatedResult<ParkingLot> with Items, TotalCount, Page, PageSize.
     [HttpGet]
-    public async Task<ActionResult<List<ParkingLot>>> GetAll(
+    public async Task<ActionResult<PaginatedResult<ParkingLot>>> GetAll(
         [FromQuery] string? sortBy = null,
         [FromQuery] double? userLat = null,
-        [FromQuery] double? userLng = null)
+        [FromQuery] double? userLng = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
-        // Reject unsupported sortBy values immediately.
         if (sortBy != null && sortBy != "distance" && sortBy != "price")
             return BadRequest($"Invalid sortBy value '{sortBy}'. Supported values: 'distance', 'price'.");
 
-        var parkingLots = await _parkingLotService.GetSortedAsync(sortBy, userLat, userLng);
-        return Ok(parkingLots);
+        if (page < 1) page = 1;
+        if (pageSize is < 1 or > 100) pageSize = 20;
+
+        var result = await _parkingLotService.GetSortedAsync(sortBy, userLat, userLng, page, pageSize);
+        return Ok(result);
     }
 }

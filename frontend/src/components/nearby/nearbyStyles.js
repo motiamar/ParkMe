@@ -198,6 +198,85 @@ export const styles = {
     gap: '10px',
   },
 
+  emptyFavorites: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+    marginTop: '32px',
+    padding: '0 16px',
+  },
+
+  emptyFavoritesIcon: {
+    fontSize: '2.5rem',
+    lineHeight: 1,
+    opacity: 0.5,
+  },
+
+  emptyFavoritesText: {
+    fontSize: '0.95rem',
+    fontWeight: '600',
+    color: '#6b7280',
+    margin: 0,
+    textAlign: 'center',
+  },
+
+  emptyFavoritesHint: {
+    fontSize: '0.82rem',
+    color: '#9ca3af',
+    margin: 0,
+    textAlign: 'center',
+  },
+
+  loadMoreBtn: {
+    display: 'block',
+    width: '100%',
+    marginTop: '12px',
+    padding: '10px 0',
+    border: '1px solid #e5e7eb',
+    borderRadius: '999px',
+    backgroundColor: '#f9fafb',
+    color: '#2563eb',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    textAlign: 'center',
+  },
+
+  loadMoreBtnDisabled: {
+    display: 'block',
+    width: '100%',
+    marginTop: '12px',
+    padding: '10px 0',
+    border: '1px solid #e5e7eb',
+    borderRadius: '999px',
+    backgroundColor: '#f9fafb',
+    color: '#9ca3af',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'default',
+    textAlign: 'center',
+  },
+
+  settingsInstallBtn: {
+    width: '100%',
+    padding: '10px 0',
+    border: '1.5px solid #2563eb',
+    borderRadius: '10px',
+    backgroundColor: '#eff6ff',
+    color: '#2563eb',
+    fontSize: '0.9rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    textAlign: 'center',
+  },
+
+  settingsInstallHint: {
+    fontSize: '0.78rem',
+    color: '#9ca3af',
+    margin: '4px 0 0 0',
+  },
+
   card: {
     backgroundColor: '#ffffff',
     border: '1px solid #f3f4f6',

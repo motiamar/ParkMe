@@ -25,8 +25,6 @@ public class AppDbContext : DbContext
 
             // Map each C# property to its matching column name in the database.
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Ignore(e => e.Name);
-            entity.Ignore(e => e.Address);
             entity.Property(e => e.NameEn).HasColumnName("name_en");
             entity.Property(e => e.NameHe).HasColumnName("name_he");
             entity.Property(e => e.AddressEn).HasColumnName("address_en");

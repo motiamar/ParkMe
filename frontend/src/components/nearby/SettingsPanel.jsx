@@ -3,7 +3,7 @@ import { styles } from './nearbyStyles';
 
 // Side panel that slides in from the left when the gear button is clicked.
 // Renders nothing when isOpen is false so it has zero cost when closed.
-function SettingsPanel({ isOpen, onClose, language, onToggleLanguage, t }) {
+function SettingsPanel({ isOpen, onClose, language, onToggleLanguage, t, canInstall, onInstall }) {
   if (!isOpen) return null;
 
   return (
@@ -53,6 +53,19 @@ function SettingsPanel({ isOpen, onClose, language, onToggleLanguage, t }) {
           </p>
           <TextSizeSelector labels={t.textSize} />
         </div>
+
+        {/* Install App section — only shown when the browser supports PWA install */}
+        {canInstall && (
+          <div style={styles.settingsSection}>
+            <p style={styles.settingsSectionLabel}>
+              {language === 'he' ? 'אפליקציה' : 'App'}
+            </p>
+            <button style={styles.settingsInstallBtn} onClick={onInstall}>
+              {t.settings.installApp}
+            </button>
+            <p style={styles.settingsInstallHint}>{t.settings.installAppHint}</p>
+          </div>
+        )}
       </div>
     </>
   );

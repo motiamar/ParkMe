@@ -14,7 +14,10 @@ function ParkingListPanel({
   displayedLots,
   parkingLots,
   isLoading,
+  isLoadingMore,
   error,
+  hasMore,
+  onLoadMore,
   selectedSort,
   onSortChange,
   showFavoritesOnly,
@@ -33,7 +36,6 @@ function ParkingListPanel({
     }}>
 
       {/* ── Sticky header — drag handle + title + sort/filter buttons ── */}
-      {/* The entire header is the drag target so the user doesn't need to hit the small pill. */}
       <div
         style={{ ...styles.panelStickyHeader, cursor: isDragging ? 'grabbing' : 'grab' }}
         onPointerDown={onPointerDown}
@@ -41,7 +43,6 @@ function ParkingListPanel({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        {/* Visual handle pill — no longer the only drag target, kept as affordance hint */}
         <div style={styles.dragHandle} />
         <div style={styles.panelHeaderRow}>
           <h2 style={{ ...styles.panelTitle, textAlign: language === 'he' ? 'right' : 'left' }}>
@@ -84,10 +85,12 @@ function ParkingListPanel({
         )}
 
         {/* Lots exist but none match the favorites filter */}
-        {!isLoading && !error && parkingLots.length > 0 && displayedLots.length === 0 && (
-          <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>
-            {t.nearby.noFavorites}
-          </p>
+        {!isLoading && !error && showFavoritesOnly && parkingLots.length > 0 && displayedLots.length === 0 && (
+          <div style={styles.emptyFavorites}>
+            <span style={styles.emptyFavoritesIcon} aria-hidden="true">★</span>
+            <p style={styles.emptyFavoritesText}>{t.nearby.noFavorites}</p>
+            <p style={styles.emptyFavoritesHint}>{t.nearby.noFavoritesHint}</p>
+          </div>
         )}
 
         {!isLoading && !error && displayedLots.length > 0 && (
@@ -104,6 +107,17 @@ function ParkingListPanel({
               />
             ))}
           </ul>
+        )}
+
+        {/* Load more — only when there are more pages and favorites filter is off */}
+        {!isLoading && !error && !showFavoritesOnly && (hasMore || isLoadingMore) && (
+          <button
+            style={isLoadingMore ? styles.loadMoreBtnDisabled : styles.loadMoreBtn}
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? t.nearby.loadingMore : t.nearby.loadMore}
+          </button>
         )}
       </div>
     </div>

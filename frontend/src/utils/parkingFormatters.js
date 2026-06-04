@@ -10,9 +10,11 @@ export function formatDrivingTimeLocalized(minutes, labels) {
 }
 
 export function getLotName(lot, language) {
-  return language === 'he' ? lot.nameHe : lot.nameEn;
+  if (language === 'he') return lot.nameHe || lot.nameEn || '—';
+  return lot.nameEn || lot.nameHe || '—';
 }
 
 export function getLotAddress(lot, language) {
-  return language === 'he' ? lot.addressHe : lot.addressEn;
+  if (language === 'he') return lot.addressHe || lot.addressEn || '—';
+  return lot.addressEn || lot.addressHe || '—';
 }

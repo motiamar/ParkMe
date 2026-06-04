@@ -15,7 +15,7 @@ import { styles }            from '../components/nearby/nearbyStyles';
 // Owns only high-level page state and wires child components together via props.
 // All heavy logic lives in hooks (useFavorites, useParkingLots, useDraggablePanel)
 // and in the focused components under src/components/nearby/.
-function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
+function NearbyParkingPage({ location, language, t, onToggleLanguage, canInstall, onInstall }) {
 
   // Which parking lot the user has tapped — swaps list for detail view
   const [selectedLot, setSelectedLot] = useState(null);
@@ -45,8 +45,8 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
     : location;
 
   // Custom hooks
-  const { favoriteIds, toggleFavorite }                              = useFavorites();
-  const { parkingLots, isLoading, error }                            = useParkingLots({ selectedSort, location: referenceLocation });
+  const { favoriteIds, toggleFavorite }                                              = useFavorites();
+  const { parkingLots, isLoading, isLoadingMore, error, hasMore, loadMore }         = useParkingLots({ selectedSort, location: referenceLocation });
   const { panelTop, isDragging, handlePointerDown,
           handlePointerMove, handlePointerUp }                       = useDraggablePanel();
 
@@ -142,6 +142,8 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
         language={language}
         onToggleLanguage={onToggleLanguage}
         t={t}
+        canInstall={canInstall}
+        onInstall={onInstall}
       />
 
       <MapSearchBox
@@ -199,7 +201,10 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage }) {
         displayedLots={displayedLots}
         parkingLots={parkingLots}
         isLoading={isLoading}
+        isLoadingMore={isLoadingMore}
         error={error}
+        hasMore={hasMore}
+        onLoadMore={loadMore}
         selectedSort={selectedSort}
         onSortChange={setSelectedSort}
         showFavoritesOnly={showFavoritesOnly}
