@@ -62,13 +62,13 @@ function ParkingListPanel({
       <div style={styles.panelScrollable}>
 
         {isLoading && (
-          <p style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>
+          <p data-testid="parking-list-loading" style={{ ...styles.statusText, textAlign: language === 'he' ? 'right' : 'center' }}>
             {t.nearby.loading}
           </p>
         )}
 
         {!isLoading && error && (
-          <div style={styles.errorBox}>
+          <div data-testid="parking-list-error" style={styles.errorBox}>
             <p style={{ ...styles.errorText, textAlign: language === 'he' ? 'right' : 'center' }}>
               {t.nearby.loadError}
             </p>
@@ -94,7 +94,7 @@ function ParkingListPanel({
         )}
 
         {!isLoading && !error && displayedLots.length > 0 && (
-          <ul style={styles.list}>
+          <ul data-testid="parking-list" style={styles.list}>
             {displayedLots.map(lot => (
               <ParkingLotCard
                 key={lot.id}

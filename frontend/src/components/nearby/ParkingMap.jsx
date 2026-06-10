@@ -23,60 +23,69 @@ function ParkingMap({ userPosition, mapCenter, recenterToken, parkingLots, searc
   }
 
   return (
-    <MapContainer
-      center={mapCenter ?? userPosition}
-      zoom={16}
-      style={{ width: '100%', height: '100%' }}
-      zoomControl={false}
-      attributionControl={false}
-    >
-      {/* Moves the map whenever mapCenter changes (search or clear) */}
-      <MapCenterController center={mapCenter} recenterToken={recenterToken} />
+    // data-testid="parking-map" lets Selenium locate the map wrapper.
+    // The hidden div below is a stable DOM signal that userPosition reached the map;
+    // Leaflet renders markers into SVG which has no stable testable attributes.
+    <div data-testid="parking-map" style={{ width: '100%', height: '100%' }}>
+      {/* Hidden indicator — stable DOM signal that userPosition reached the map.
+          Leaflet renders markers into SVG which has no reliable testable attributes. */}
+      <div data-testid="user-location-set" aria-hidden="true" style={{ display: 'none' }} />
 
-      {/* CartoDB Voyager — free, no API key, modern Waze-like style */}
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-      />
+      <MapContainer
+        center={mapCenter ?? userPosition}
+        zoom={16}
+        style={{ width: '100%', height: '100%' }}
+        zoomControl={false}
+        attributionControl={false}
+      >
+        {/* Moves the map whenever mapCenter changes (search or clear) */}
+        <MapCenterController center={mapCenter} recenterToken={recenterToken} />
 
-      {/* Accuracy ring — translucent blue circle around the user dot */}
-      <Circle
-        center={userPosition}
-        radius={40}
-        pathOptions={{ color: '#2563eb', weight: 0, fillColor: '#2563eb', fillOpacity: 0.15 }}
-      />
+        {/* CartoDB Voyager — free, no API key, modern Waze-like style */}
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        />
 
-      {/* User location dot — solid blue with white border */}
-      <CircleMarker
-        center={userPosition}
-        radius={9}
-        pathOptions={{ color: '#ffffff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }}
-      />
+        {/* Accuracy ring — translucent blue circle around the user dot */}
+        <Circle
+          center={userPosition}
+          radius={40}
+          pathOptions={{ color: '#2563eb', weight: 0, fillColor: '#2563eb', fillOpacity: 0.15 }}
+        />
 
-      {/* Green teardrop pin at the geocoded search result */}
-      {searchedLocation && (
-        <Marker position={searchedLocation} icon={searchLocationIcon} />
-      )}
+        {/* User location dot — solid blue with white border */}
+        <CircleMarker
+          center={userPosition}
+          radius={9}
+          pathOptions={{ color: '#ffffff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 }}
+        />
 
-      {/* One green "P" pin per parking lot that has valid coordinates */}
-      {parkingLots
-        .filter(lot =>
-          lot.latitude  != null && !isNaN(lot.latitude) &&
-          lot.longitude != null && !isNaN(lot.longitude)
-        )
-        .map(lot => (
-          <Marker
-            key={lot.id}
-            position={[lot.latitude, lot.longitude]}
-            icon={parkingIcon}
-            eventHandlers={{ click: () => onSelectLot(lot) }}
-          >
-            <Tooltip direction="top" offset={[0, -36]} opacity={0.95}>
-              {getLotName(lot, language)}
-            </Tooltip>
-          </Marker>
-        ))
-      }
-    </MapContainer>
+        {/* Green teardrop pin at the geocoded search result */}
+        {searchedLocation && (
+          <Marker position={searchedLocation} icon={searchLocationIcon} />
+        )}
+
+        {/* One green "P" pin per parking lot that has valid coordinates */}
+        {parkingLots
+          .filter(lot =>
+            lot.latitude  != null && !isNaN(lot.latitude) &&
+            lot.longitude != null && !isNaN(lot.longitude)
+          )
+          .map(lot => (
+            <Marker
+              key={lot.id}
+              position={[lot.latitude, lot.longitude]}
+              icon={parkingIcon}
+              eventHandlers={{ click: () => onSelectLot(lot) }}
+            >
+              <Tooltip direction="top" offset={[0, -36]} opacity={0.95}>
+                {getLotName(lot, language)}
+              </Tooltip>
+            </Marker>
+          ))
+        }
+      </MapContainer>
+    </div>
   );
 }
 

@@ -121,7 +121,7 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage, canInstall
   }
 
   return (
-    <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
+    <div data-testid="nearby-parking-page" dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
 
       {/* Gear / settings button — top-left corner, above the map */}
       <button

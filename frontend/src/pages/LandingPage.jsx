@@ -59,6 +59,7 @@ function LandingPage({ onNavigate, onFindParking, language, t }) {
 
         {/* Main CTA — merges disabled style when loading */}
         <button
+          data-testid="find-parking-btn"
           style={{ ...styles.button, ...(isLoading ? styles.buttonDisabled : {}) }}
           onClick={handleClick}
           disabled={isLoading}
@@ -67,7 +68,7 @@ function LandingPage({ onNavigate, onFindParking, language, t }) {
         </button>
 
         {/* Error shown only after a failed or denied location request */}
-        {errorMessage && <p style={styles.error}>{errorMessage}</p>}
+        {errorMessage && <p data-testid="location-error" style={styles.error}>{errorMessage}</p>}
       </div>
     </div>
   );
