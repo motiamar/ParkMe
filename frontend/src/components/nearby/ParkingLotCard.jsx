@@ -8,7 +8,7 @@ function ParkingLotCard({ lot, isFavorite, onToggleFavorite, onSelect, language,
   const travelMinutes = lot.drivingTimeMinutes  ?? null;
 
   return (
-    <li style={{ ...styles.card, cursor: 'pointer' }} onClick={() => onSelect(lot)}>
+    <li data-testid="parking-lot-card" style={{ ...styles.card, cursor: 'pointer' }} onClick={() => onSelect(lot)}>
 
       {/* Top row: name on the text-start side, price + star on the other */}
       <div style={styles.cardTopRow}>

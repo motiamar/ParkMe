@@ -52,7 +52,7 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite, 
   }
 
   return (
-    <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
+    <div data-testid="parking-details" dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.screen}>
       {/* Max-width wrapper keeps the layout phone-sized on wide screens */}
       <div style={styles.wrapper}>
 
@@ -95,9 +95,9 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite, 
 
           {/* Name (left) + price block (right) */}
           <div style={styles.header}>
-            <h1 style={{ ...styles.name, textAlign: language === 'he' ? 'right' : 'left' }}>{selectedName}</h1>
+            <h1 data-testid="parking-details-name" style={{ ...styles.name, textAlign: language === 'he' ? 'right' : 'left' }}>{selectedName}</h1>
             <div style={styles.priceBlock}>
-              <span style={{ ...styles.price, color: isFree ? '#16a34a' : '#2563eb' }}>
+              <span data-testid="parking-details-price" style={{ ...styles.price, color: isFree ? '#16a34a' : '#2563eb' }}>
                 {priceText}
               </span>
               {!isFree && <span style={styles.perHour}>{t.details.perHour}</span>}
@@ -105,14 +105,14 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite, 
           </div>
 
           {/* Address */}
-          <p style={{ ...styles.address, textAlign: language === 'he' ? 'right' : 'left' }}>⊙ {selectedAddress}</p>
+          <p data-testid="parking-details-address" style={{ ...styles.address, textAlign: language === 'he' ? 'right' : 'left' }}>⊙ {selectedAddress}</p>
 
           {/* 2×2 information grid */}
           <div style={styles.infoGrid}>
 
             <div style={styles.infoBox}>
               <span style={styles.infoLabel}>{t.details.availability}</span>
-              <span style={{ ...styles.infoValue, color: availColor }}>{availText}</span>
+              <span data-testid="parking-details-availability" style={{ ...styles.infoValue, color: availColor }}>{availText}</span>
             </div>
 
             <div style={styles.infoBox}>
