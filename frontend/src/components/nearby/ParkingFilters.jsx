@@ -5,16 +5,17 @@ import { styles } from './nearbyStyles';
 // active highlight) but it is a separate toggle, not a sort option.
 function ParkingFilters({ selectedSort, onSortChange, showFavoritesOnly, onToggleFavoritesOnly, t }) {
   const sortOptions = [
-    { label: t.nearby.default,  value: 'default'  },
-    { label: t.nearby.closest,  value: 'distance' },
-    { label: t.nearby.cheapest, value: 'price'    },
+    { label: t.nearby.default,  value: 'default',  testId: 'sort-by-default'  },
+    { label: t.nearby.closest,  value: 'distance', testId: 'sort-by-distance' },
+    { label: t.nearby.cheapest, value: 'price',    testId: 'sort-by-price'    },
   ];
 
   return (
     <div style={styles.sortRow}>
-      {sortOptions.map(({ label, value }) => (
+      {sortOptions.map(({ label, value, testId }) => (
         <button
           key={value}
+          data-testid={testId}
           onClick={() => onSortChange(value)}
           style={selectedSort === value ? styles.sortBtnActive : styles.sortBtn}
         >

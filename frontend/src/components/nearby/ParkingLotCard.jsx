@@ -45,7 +45,7 @@ function ParkingLotCard({ lot, isFavorite, onToggleFavorite, onSelect, language,
             ? t.nearby.full
             : `${lot.availableSpaces} / ${lot.totalSpaces} ${t.nearby.spaces}`}
         </span>
-        <span style={styles.distanceText}>
+        <span data-testid="parking-lot-distance" style={styles.distanceText}>
           {distKm !== null ? `↗ ${distKm.toFixed(1)} km` : t.nearby.distanceUnavailable}
         </span>
       </div>
