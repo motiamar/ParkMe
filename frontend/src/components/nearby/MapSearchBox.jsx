@@ -12,6 +12,7 @@ function MapSearchBox({ searchQuery, setSearchQuery, onSearch, onClear, searchEr
         {/* X clear button — appears on the left once the user has typed something */}
         {searchQuery.length > 0 && (
           <button
+            data-testid="search-clear-btn"
             style={styles.searchClearBtn}
             onClick={onClear}
             aria-label={language === 'he' ? 'נקה חיפוש' : 'Clear search'}
@@ -22,6 +23,7 @@ function MapSearchBox({ searchQuery, setSearchQuery, onSearch, onClear, searchEr
 
         {/* Text input — dir follows language so Hebrew placeholder is right-aligned */}
         <input
+          data-testid="search-input"
           dir={language === 'he' ? 'rtl' : 'ltr'}
           style={styles.searchInput}
           type="text"
@@ -33,6 +35,7 @@ function MapSearchBox({ searchQuery, setSearchQuery, onSearch, onClear, searchEr
 
         {/* Magnifying-glass button on the right */}
         <button
+          data-testid="search-submit-btn"
           style={styles.searchSubmitBtn}
           onClick={onSearch}
           aria-label={language === 'he' ? 'חפש' : 'Search'}

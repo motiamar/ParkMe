@@ -19,7 +19,7 @@ The goal of the project is to make parking search faster, easier, and less stres
 
 - Backend: C# / .NET
 - Frontend: React
-- Database: To be decided
+- Database: vecal
 
 ## Project Status
 

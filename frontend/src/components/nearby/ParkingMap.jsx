@@ -31,6 +31,11 @@ function ParkingMap({ userPosition, mapCenter, recenterToken, parkingLots, searc
           Leaflet renders markers into SVG which has no reliable testable attributes. */}
       <div data-testid="user-location-set" aria-hidden="true" style={{ display: 'none' }} />
 
+      {/* Hidden indicator — present only when the map is centered on a searched location. */}
+      {searchedLocation && (
+        <div data-testid="search-location-set" aria-hidden="true" style={{ display: 'none' }} />
+      )}
+
       <MapContainer
         center={mapCenter ?? userPosition}
         zoom={16}
