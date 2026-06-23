@@ -10,6 +10,8 @@ import { useParkingLots }    from '../hooks/useParkingLots';
 import { useDraggablePanel } from '../hooks/useDraggablePanel';
 import { geocodeAddress }    from '../utils/geocoding';
 import { styles }            from '../components/nearby/nearbyStyles';
+import { getOrCreateUserId } from '../utils/userId';
+import { postAuditLog }      from '../utils/auditApi';
 
 // NearbyParkingPage — slim orchestrator.
 // Owns only high-level page state and wires child components together via props.
@@ -66,6 +68,7 @@ function NearbyParkingPage({ location, language, t, onToggleLanguage, canInstall
       const coords = await geocodeAddress(q);
       if (!coords) { setSearchError(t.nearby.searchNotFound); return; }
       setSearchedLocation([coords.lat, coords.lng]);
+      postAuditLog(getOrCreateUserId(), 'SEARCH_LOCATION', 'search', null, `User searched for destination: ${q}`);
     } catch {
       setSearchError(t.nearby.searchError);
     }
