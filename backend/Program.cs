@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ParkingLotService>();
+builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<FavoritesService>();
 
 builder.Services.AddCors(options =>

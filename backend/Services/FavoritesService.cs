@@ -7,10 +7,12 @@ namespace ParkMeBackend.Services;
 public class FavoritesService
 {
     private readonly AppDbContext _db;
+    private readonly AuditLogService _audit;
 
-    public FavoritesService(AppDbContext db)
+    public FavoritesService(AppDbContext db, AuditLogService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     public async Task<List<int>> GetFavoriteIdsByUserAsync(string userId)
@@ -35,6 +37,9 @@ public class FavoritesService
             CreatedAt = DateTime.UtcNow,
         });
         await _db.SaveChangesAsync();
+
+        await _audit.LogAsync(userId, "ADD_FAVORITE", "parking_lot", parkingLotId.ToString(),
+            "User added parking lot to favorites");
     }
 
     public async Task RemoveFavoriteAsync(string userId, int parkingLotId)
@@ -46,5 +51,8 @@ public class FavoritesService
 
         _db.UserFavorites.Remove(favorite);
         await _db.SaveChangesAsync();
+
+        await _audit.LogAsync(userId, "REMOVE_FAVORITE", "parking_lot", parkingLotId.ToString(),
+            "User removed parking lot from favorites");
     }
 }
