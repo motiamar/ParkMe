@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ParkMeBackend.Data;
+using ParkMeBackend.Middleware;
 using ParkMeBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<ParkingLotService>();
 builder.Services.AddScoped<FavoritesService>();
+builder.Services.AddSingleton<DevLogStore>();
 
 builder.Services.AddCors(options =>
 {
@@ -43,6 +45,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+app.UseMiddleware<ApiLoggingMiddleware>();
 app.MapControllers();
 
 app.Run();
