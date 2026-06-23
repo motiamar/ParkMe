@@ -1,4 +1,6 @@
-const API_BASE = `${import.meta.env.VITE_API_URL}/api/favorites`;
+import { BACKEND_API_BASE_URL } from './apiBase';
+
+const API_BASE = `${BACKEND_API_BASE_URL}/api/favorites`;
 
 export async function fetchFavoriteIds(userId) {
   const res = await fetch(`${API_BASE}/${userId}`);
