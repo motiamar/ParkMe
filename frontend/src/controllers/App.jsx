@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import LandingPage from '../pages/LandingPage';
+import DevLogsPage from '../pages/DevLogsPage';
 import NearbyParkingPage from '../pages/NearbyParkingPage';
 import { usePwaInstall } from '../hooks/usePwaInstall';
 
@@ -145,10 +146,19 @@ const translations = {
 function App() {
   // page: tracks which screen is currently active ('landing' or 'nearby')
   // location: stores the user's { lat, lng } after permission is granted
-  const [page, setPage] = useState('landing');
+  const [page, setPage] = useState(getPageFromPath(window.location.pathname));
   const [location, setLocation] = useState(null);
   const [language, setLanguage] = useState('he');
   const { canInstall, install } = usePwaInstall();
+
+  useEffect(() => {
+    function handlePopState() {
+      setPage(getPageFromPath(window.location.pathname));
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     document.documentElement.dir = language === 'he' ? 'rtl' : 'ltr';
@@ -161,11 +171,16 @@ function App() {
     setLanguage((current) => (current === 'he' ? 'en' : 'he'));
   }
 
+  function handleNavigate(nextPage) {
+    setPage(nextPage);
+    window.history.pushState({}, '', getPathFromPage(nextPage));
+  }
+
   // Called by LandingPage when location permission is approved.
   // Saves the coordinates and switches to the results screen.
   function handleFindParking(coords) {
     setLocation(coords);
-    setPage('nearby');
+    handleNavigate('nearby');
   }
 
   // Render the active page, passing down only the props each page needs
@@ -173,7 +188,7 @@ function App() {
     <div dir={language === 'he' ? 'rtl' : 'ltr'} style={styles.shell}>
       {page === 'nearby' ? (
         <NearbyParkingPage
-          onNavigate={setPage}
+          onNavigate={handleNavigate}
           location={location}
           language={language}
           t={t}
@@ -181,9 +196,11 @@ function App() {
           canInstall={canInstall}
           onInstall={install}
         />
+      ) : page === 'devlogs' ? (
+        <DevLogsPage />
       ) : (
         <LandingPage
-          onNavigate={setPage}
+          onNavigate={handleNavigate}
           onFindParking={handleFindParking}
           language={language}
           t={t}
@@ -200,3 +217,27 @@ const styles = {
 };
 
 export default App;
+
+function getPageFromPath(pathname) {
+  if (pathname === '/dev/logs') {
+    return 'devlogs';
+  }
+
+  if (pathname === '/nearby') {
+    return 'nearby';
+  }
+
+  return 'landing';
+}
+
+function getPathFromPage(page) {
+  if (page === 'devlogs') {
+    return '/dev/logs';
+  }
+
+  if (page === 'nearby') {
+    return '/nearby';
+  }
+
+  return '/';
+}
