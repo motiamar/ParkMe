@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { BACKEND_API_BASE_URL } from '../utils/apiBase';
 
-const API_URL = 'http://localhost:5176/api/devlogs';
+const API_URL = `${BACKEND_API_BASE_URL}/api/devlogs`;
 
 function DevLogsPage() {
   const [logs, setLogs] = useState([]);

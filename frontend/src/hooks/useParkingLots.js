@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { BACKEND_API_BASE_URL } from '../utils/apiBase';
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/parkinglots`;
+const API_URL = `${BACKEND_API_BASE_URL}/api/parkinglots`;
 const PAGE_SIZE = 20;
 
 // Fetches parking lots from the backend, accumulating pages for "load more".
