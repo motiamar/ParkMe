@@ -1,3 +1,6 @@
+import { getOrCreateUserId } from '../utils/userId';
+import { postAuditLog }      from '../utils/auditApi';
+
 function formatDrivingTime(minutes) {
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
@@ -160,6 +163,7 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite, 
               target="_blank"
               rel="noopener noreferrer"
               style={styles.googleBtn}
+              onClick={() => postAuditLog(getOrCreateUserId(), 'NAVIGATE_TO_PARKING', 'parking_lot', String(lot.id), `User opened navigation to parking lot: ${selectedName}`)}
             >
               Google Maps
             </a>
@@ -168,6 +172,7 @@ function ParkingLotDetails({ lot, onBack, isFavorite = false, onToggleFavorite, 
               target="_blank"
               rel="noopener noreferrer"
               style={styles.wazeBtn}
+              onClick={() => postAuditLog(getOrCreateUserId(), 'NAVIGATE_TO_PARKING', 'parking_lot', String(lot.id), `User opened navigation to parking lot: ${selectedName}`)}
             >
               Waze
             </a>

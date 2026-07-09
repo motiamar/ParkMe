@@ -2,7 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'           // global reset and base styles
 import App from './controllers/App.jsx'  // root controller
+import AdminAuditLog from './pages/AdminAuditLog.jsx'
 import { TextSizeProvider } from './utils/TextSizeContext.jsx'
+
+const isAdminAudit = window.location.pathname === '/admin/audit';
 
 // Mount the React app into the #root div defined in index.html.
 // StrictMode enables extra warnings during development (no effect in production).
@@ -11,7 +14,7 @@ import { TextSizeProvider } from './utils/TextSizeContext.jsx'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <TextSizeProvider>
-      <App />
+      {isAdminAudit ? <AdminAuditLog /> : <App />}
     </TextSizeProvider>
   </StrictMode>,
 )

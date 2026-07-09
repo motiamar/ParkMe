@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
 
     public DbSet<ParkingLot> ParkingLots { get; set; }
     public DbSet<UserFavorite> UserFavorites { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
 
     // OnModelCreating is called once at startup to configure the mapping
     // between C# property names (PascalCase) and PostgreSQL column names (snake_case).
@@ -51,6 +52,18 @@ public class AppDbContext : DbContext
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.ParkingLotId).HasColumnName("parking_lot_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.ToTable("audit_logs", "public");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ActionType).HasColumnName("action_type");
+            entity.Property(e => e.EntityType).HasColumnName("entity_type");
+            entity.Property(e => e.EntityId).HasColumnName("entity_id");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
         });
     }
 }
